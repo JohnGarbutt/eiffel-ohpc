@@ -24,6 +24,6 @@ You may find this useful to generate an inventory:
 
 You can create a cluster by doing:
 
-    ansbile-playbook create.yml -i hosts
+    ansible-playbook create.yml -i hosts
 
 TODO: expand and contract playbooks.
