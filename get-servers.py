@@ -20,7 +20,9 @@ def main():
     print "TODO: add login here"
     print "[openhpc_compute]"
 
-    for server in conn.compute.list_servers()
+    servers = list(conn.list_servers())
+    servers = sorted(servers, key = lambda i: i['name'])
+    for server in servers:
         ip = server.addresses[server.addresses.keys()[0]][0]['addr']
         print "%s ansible_host=%s ansible_user=centos" % (server.name, ip)
 
