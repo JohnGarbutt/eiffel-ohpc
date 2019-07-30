@@ -1,2 +1,3 @@
 ---
 - src: stackhpc.openhpc
+  version: master
