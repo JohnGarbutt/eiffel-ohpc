@@ -1,4 +1,42 @@
 ---
+- hosts: localhost
+  vars:
+    hosts: "{{ groups['cluster_batch'] + groups['cluster_login'] }}"
+  tasks:
+
+    - name: Wait for SSH access to the nodes
+      wait_for:
+        host: "{{ hostvars[item]['ansible_host'] }}"
+        port: 22
+        state: started
+        timeout: 120
+      delegate_to: "localhost"
+      loop: "{{ hosts }}"
+
+    - name: Scan for SSH keys
+      command: "ssh-keyscan {{ hostvars[item]['ansible_host'] }}"
+      register: keyscan_results
+      changed_when: False
+      delegate_to: "localhost"
+      loop: "{{ hosts }}"
+
+    - debug:
+        msg: "{{ item.stdout_lines[0] }}"
+      loop: "{{ keyscan_results['results'] }}"
+
+    - name: Ensure servers are in SSH known hosts
+      blockinfile:
+        block: |
+          {% for key in item.stdout_lines %}
+          {{ key }}
+          {% endfor %}
+        create: true
+        marker: "# {mark} MANAGED BLOCK FOR OpenHPC.{{ index }}"
+        path: "~/.ssh/known_hosts"
+      loop: "{{ keyscan_results['results'] }}"
+      loop_control:
+        index_var: index
+
 - hosts:
   - cluster_login
   - cluster_control
