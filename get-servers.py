@@ -16,15 +16,20 @@ def get_connection():
 
 def main():
     conn = get_connection()
-    print "[ohpc_login]"
-    print "TODO: add login here"
-    print "[ohpc_compute]"
-
     servers = list(conn.list_servers())
     servers = sorted(servers, key = lambda i: i['name'])
+
+    print "[ohpc_login]"
     for server in servers:
-        ip = server.addresses[server.addresses.keys()[0]][0]['addr']
-        print "%s ansible_host=%s ansible_user=centos" % (server.name, ip)
+        if "login" in server.name:
+            ip = server.addresses[server.addresses.keys()[0]][0]['addr']
+            print "%s ansible_host=%s ansible_user=centos" % (server.name, ip)
+
+    print "[ohpc_compute]"
+    for server in servers:
+        if "compute" in server.name:
+            ip = server.addresses[server.addresses.keys()[0]][0]['addr']
+            print "%s ansible_host=%s ansible_user=centos" % (server.name, ip)
 
     print """
 [cluster_login:children]
