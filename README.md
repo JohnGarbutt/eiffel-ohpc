@@ -18,7 +18,7 @@ You may find this useful to run the above ansible-playbook command:
 You may find this useful to generate an inventory:
 
     . openrc
-    ./get-server.py > hosts
+    ./get-servers.py > hosts
 
 ## Usage
 

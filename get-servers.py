@@ -16,9 +16,9 @@ def get_connection():
 
 def main():
     conn = get_connection()
-    print "[openhpc_login]"
+    print "[ohpc_login]"
     print "TODO: add login here"
-    print "[openhpc_compute]"
+    print "[ohpc_compute]"
 
     servers = list(conn.list_servers())
     servers = sorted(servers, key = lambda i: i['name'])
@@ -28,13 +28,13 @@ def main():
 
     print """
 [cluster_login:children]
-openhpc_login
+ohpc_login
 
 [cluster_control:children]
-openhpc_login
+ohpc_login
 
 [cluster_batch:children]
-openhpc_compute"""
+ohpc_compute"""
 
 if __name__ == '__main__':
     main()
