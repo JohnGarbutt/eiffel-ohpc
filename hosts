@@ -1,16 +1,17 @@
 [ohpc_login]
-ohpc-login ansible_host=10.145.0.2 ansible_user=centos
+ohpc-login ansible_host=10.145.0.10 ansible_user=centos
+
 [ohpc_compute]
-ohpc-compute-1 ansible_host=10.145.0.3 ansible_user=centos
-ohpc-compute-10 ansible_host=10.145.0.29 ansible_user=centos
-ohpc-compute-2 ansible_host=10.145.0.8 ansible_user=centos
-ohpc-compute-3 ansible_host=10.145.0.28 ansible_user=centos
-ohpc-compute-4 ansible_host=10.145.0.5 ansible_user=centos
-ohpc-compute-5 ansible_host=10.145.0.6 ansible_user=centos
-ohpc-compute-6 ansible_host=10.145.0.7 ansible_user=centos
-ohpc-compute-7 ansible_host=10.145.0.4 ansible_user=centos
-ohpc-compute-8 ansible_host=10.145.0.19 ansible_user=centos
-ohpc-compute-9 ansible_host=10.145.0.14 ansible_user=centos
+ohpc-compute-0 ansible_host=10.145.0.8 
+ohpc-compute-1 ansible_host=10.145.0.25 
+ohpc-compute-2 ansible_host=10.145.0.21 
+ohpc-compute-3 ansible_host=10.145.0.6 
+ohpc-compute-4 ansible_host=10.145.0.39 
+ohpc-compute-5 ansible_host=10.145.0.7 
+ohpc-compute-6 ansible_host=10.145.0.13 
+ohpc-compute-7 ansible_host=10.145.0.24 
+ohpc-compute-8 ansible_host=10.145.0.11 
+ohpc-compute-9 ansible_host=10.145.0.33 
 
 [cluster_login:children]
 ohpc_login
