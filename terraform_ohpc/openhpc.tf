@@ -1,3 +1,6 @@
+provider "openstack" {
+  cloud = "eiffel"
+}
 
 resource "openstack_compute_instance_v2" "login" {
   name            = "ohpc-login"
