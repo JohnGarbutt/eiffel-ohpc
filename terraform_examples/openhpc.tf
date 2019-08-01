@@ -32,7 +32,7 @@ ${openstack_compute_instance_v2.login.name} ansible_host=${openstack_compute_ins
 EOT
       computes = <<EOT
 %{for compute in openstack_compute_instance_v2.compute}
-${compute.name} ansible_host=${compute.network[0].fixed_ip_v4} %{ endfor }
+${compute.name} ansible_host=${compute.network[0].fixed_ip_v4} ansible_user=centos%{ endfor }
 EOT
     }
 }
