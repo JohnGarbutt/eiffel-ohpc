@@ -4,9 +4,9 @@ provider "openstack" {
 
 resource "openstack_compute_instance_v2" "login" {
   name            = "ohpc-login"
-  image_name      = "CentOS7-OpenHPC"
+  image_name      = "CentOS7-1905"
   flavor_name     = "C6420-Xeon6148-192"
-  key_pair        = "usual"
+  key_pair        = "johng"
   security_groups = ["default"]
 
   network {
@@ -16,11 +16,11 @@ resource "openstack_compute_instance_v2" "login" {
 
 resource "openstack_compute_instance_v2" "compute" {
   name            = "ohpc-compute-${count.index}"
-  image_name      = "CentOS7-OpenHPC"
+  image_name      = "CentOS7-1905"
   flavor_name     = "C6420-Xeon6148-192"
-  key_pair        = "usual"
+  key_pair        = "johng"
   security_groups = ["default"]
-  count           = 10
+  count           = 12
 
   network {
     name = "provision-net"
