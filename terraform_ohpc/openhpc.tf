@@ -6,7 +6,7 @@ resource "openstack_compute_instance_v2" "login" {
   name            = "ohpc-login"
   image_name      = "CentOS7-1905"
   flavor_name     = "C6420-Xeon6148-192"
-  key_pair        = "johng"
+  key_pair        = "default"
   security_groups = ["default"]
 
   network {
@@ -18,9 +18,9 @@ resource "openstack_compute_instance_v2" "compute" {
   name            = "ohpc-compute-${count.index}"
   image_name      = "CentOS7-1905"
   flavor_name     = "C6420-Xeon6148-192"
-  key_pair        = "johng"
+  key_pair        = "default"
   security_groups = ["default"]
-  count           = 12
+  count           = 10
 
   network {
     name = "provision-net"

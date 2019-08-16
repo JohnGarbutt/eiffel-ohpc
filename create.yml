@@ -42,6 +42,8 @@
   - cluster_control
   - cluster_batch
   become: yes
+  vars:
+    openhpc_repo_url: "https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm"
   pre_tasks:
     - name: Generate /etc/hosts file content
       set_fact:
@@ -55,6 +57,10 @@
         create: no
         state: present
         block: "{{ hostvars[ansible_play_hosts[0]].etc_hosts_content }}"
+    - name: Install OpenHPC repository
+      yum:
+        name: "{{ openhpc_repo_url }}"
+        state: present
   roles:
     - role: stackhpc.openhpc
       openhpc_enable:

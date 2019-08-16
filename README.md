@@ -36,3 +36,5 @@ https://www.terraform.io/downloads.html
     terraform import openstack_containerinfra_cluster_v1.testk8s b0125e63-90e1-4f4e-8515-3bd109d07b87
     terraform plan
     terraform apply
+
+# Ansible

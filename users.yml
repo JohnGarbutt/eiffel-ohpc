@@ -1,0 +1,21 @@
+- hosts:
+  - cluster_login
+  - cluster_batch
+  become: yes
+  pre_tasks:
+  - name: Enable SELinux
+    selinux:
+      policy: targeted
+      state: permissive
+  roles:
+  - role: singleplatform-eng.users
+    users:
+      - username: foo
+        name: Foo Barrington
+        groups: []
+        uid: 1001
+        home: /mnt/ohpc/foo
+        profile: |
+          alias ll='ls -lah'
+        ssh_key:
+          - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC5EVKNyTk0WoXqH+hue3EJhB8c4J5cYsKuw4DqMcEDsVd58n2LNqvuU+SceuLN5bV69FpBCR2swRUVe2tS+SiRVx6p+pa0hcOlRfdvFJCJ51fp3PW7IHS6tIl53ZLG50sDeXPh0gTRKG3o1gZFazOhGqmO9pd15FizzudMrGYCUGcrQ4DOEkSB/WhqK/wyPWP4/LxSzi1iY0gfU0gRxUpInTPBJJNOsS6+xvhKuuJm8TCNLRzrxrAG+L48eKasSphGNW8+/sxw4vMiEHxNT2XTwyRaOpNup3ovYOrvOyYkgVugHYeT/WTn180ykAPDXd518U8/bGF2SGyb0md45UIT stackhpc@seed"
