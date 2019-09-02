@@ -75,4 +75,9 @@
           user: "centos"
       openhpc_cluster_name: ohpc
       openhpc_packages:
+        # These packages should be sufficent for:
+        # module load gnu7 mvapich2 imb
+        # srun --mpi=pmix -N2 -n2 IMB-MPI1 PingPong
         - infiniband-diags
+        - imb-gnu7-mvapich2-ohpc
+        - lmod-ohpc
