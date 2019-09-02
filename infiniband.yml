@@ -1,0 +1,38 @@
+---
+
+- hosts:
+  - cluster_login
+  - cluster_control
+  - cluster_batch
+  tasks:
+    - name: galexrt.kernel-modules
+      include_role: 
+        name: galexrt.kernel-modules
+      vars:
+        kernel_modules:
+          - name: ib_ipoib
+            blacklist: false
+          - name: mlx5_ib
+            blacklist: false
+        kernel_load_file: mlnx-ipoib.conf
+        ansible_become: true
+      become: true
+    - name: Assign IP to infiniband interfaces
+      # This is a workaround until we add an infiniband network in neutron
+      block:
+        - name: template interface configuration file
+          template:
+            src: ifcfg-ib0.j2
+            dest: /etc/sysconfig/network-scripts/ifcfg-ib0
+          vars:
+            # take last octet from IP on provisioning network
+            last_octet: "{{ ansible_default_ipv4.address | regex_replace('^.*?(\\d+)$', '\\1') }}"
+            netmask: 255.255.255.0
+            ip: 10.3.0.{{ last_octet }}
+          become: true
+          notify: restart ib0
+  handlers:
+    - name: restart ib0
+      shell: ifdown ib0 && ifup ib0
+      become: true
+

@@ -4,3 +4,7 @@
   version: v0.4.0
 - src: singleplatform-eng.users
   version: v1.2.6
+# Must use master branch to get: https://github.com/galexrt/ansible-kernel-modules/commit/bbd0b11cf88d31a0629896ddd717ebed0e56a154
+- src: https://github.com/galexrt/ansible-kernel-modules
+  name: galexrt.kernel-modules
+  version: master
