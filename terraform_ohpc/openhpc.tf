@@ -1,29 +1,29 @@
 provider "openstack" {
-  cloud = "eiffel"
+  cloud = "cumulus-dev"
 }
 
 resource "openstack_compute_instance_v2" "login" {
   name            = "ohpc-login"
-  image_name      = "CentOS7-1905"
-  flavor_name     = "C6420-Xeon6148-192"
-  key_pair        = "default"
+  image_name      = "CentOS7-1907"
+  flavor_name     = "general.v1.tiny"
+  key_pair        = "johng"
   security_groups = ["default"]
 
   network {
-    name = "provision-net"
+    name = "internet"
   }
 }
 
 resource "openstack_compute_instance_v2" "compute" {
   name            = "ohpc-compute-${count.index}"
-  image_name      = "CentOS7-1905"
-  flavor_name     = "C6420-Xeon6148-192"
-  key_pair        = "default"
+  image_name      = "CentOS7-1907"
+  flavor_name     = "general.v1.tiny"
+  key_pair        = "johng"
   security_groups = ["default"]
-  count           = 10
+  count           = 1
 
   network {
-    name = "provision-net"
+    name = "internet"
   }
 }
 
