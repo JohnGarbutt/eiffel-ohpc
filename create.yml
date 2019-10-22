@@ -1,28 +1,24 @@
 ---
 - hosts: localhost
+  gather_facts: false
   vars:
-    hosts: "{{ groups['cluster_batch'] + groups['cluster_login'] }}"
+    all_hosts: "{{ groups['cluster_batch'] + groups['cluster_login'] }}"
   tasks:
 
-    - name: Wait for SSH access to the nodes
+    - name: Wait for SSH access to proxy host
       wait_for:
-        host: "{{ hostvars[item]['ansible_host'] }}"
+        host: "{{ ohpc_proxy_address }}"
         port: 22
         state: started
         timeout: 120
       delegate_to: "localhost"
-      loop: "{{ hosts }}"
 
     - name: Scan for SSH keys
-      command: "ssh-keyscan {{ hostvars[item]['ansible_host'] }}"
+      command: "ssh {{ ansible_user }}@{{ ohpc_proxy_address }} ssh-keyscan -t rsa {{ hostvars[item]['ansible_host'] }}"
       register: keyscan_results
       changed_when: False
       delegate_to: "localhost"
-      loop: "{{ hosts }}"
-
-    - debug:
-        msg: "{{ item.stdout_lines[0] }}"
-      loop: "{{ keyscan_results['results'] }}"
+      loop: "{{ all_hosts }}"
 
     - name: Ensure servers are in SSH known hosts
       blockinfile:
