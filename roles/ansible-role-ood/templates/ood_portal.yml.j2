@@ -26,7 +26,7 @@ servername: "{{ public_url }}"
 # Example:
 
 
-{% if use_lets_encrypt is defined %}
+{% if use_lets_encrypt %}
 ssl:
 - 'SSLCertificateFile "/etc/letsencrypt/live/{{ public_url }}/fullchain.pem"'
 - 'SSLCertificateKeyFile "/etc/letsencrypt/live/{{ public_url }}/privkey.pem"'

@@ -49,7 +49,7 @@
 # certbot certonly --dry-run --standalone --preferred-challenges http -d srcp-demo.hpc.cam.ac.uk
 # Run this task only the first time...
 - name: Create certificate
-  command: certbot certonly --non-interactive --email sysadmin@hpc.cam.ac.uk --agree-tos --standalone --preferred-challenges http -d "{{ public_url }}"
+  command: certbot certonly --non-interactive --email "{{ email }}" --agree-tos --standalone --preferred-challenges http -d "{{ public_url }}"
   args:
     creates: /etc/letsencrypt/live/"{{ public_url }}"/fullchain.pem
 

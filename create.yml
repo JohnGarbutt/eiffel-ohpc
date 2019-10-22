@@ -72,3 +72,10 @@
       openhpc_cluster_name: ohpc
       openhpc_packages:
         - infiniband-diags
+
+- hosts:
+  - cluster_login
+  become: yes
+  roles:
+    - role: ansible-role-ood
+      public_url: "{{ ohpc_proxy_address }}"

@@ -1,7 +1,7 @@
 ---
 # defaults file for ansible-role-ood
 
-ood_rpm_repo: https://yum.osc.edu/ondemand/1.6/ondemand-release-web-1.6-1.el7.noarch.rpm
+ood_rpm_repo: https://yum.osc.edu/ondemand/1.6/ondemand-release-web-1.6-4.noarch.rpm
 cluster_name: "{{ siteName | default('test_cluster')}}"
 cluster_login_fqdn: "{{ public_url }}"
 
@@ -35,4 +35,4 @@ kill_copy_paste:
 public_url:
 
 #use_lets_encrypt: if defind a valid SSL cert will be requested from lets encrypt
-use_lets_encrypt:
+use_lets_encrypt: false

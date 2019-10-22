@@ -1,7 +1,7 @@
 
 - name: install and configure lets-encrypt
   include_tasks: lets-encrypt.yml
-  when: use_lets_encrypt is defined
+  when: use_lets_encrypt
 
 - name: including install.yml
   include_tasks: install.yml
