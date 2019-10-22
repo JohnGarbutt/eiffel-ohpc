@@ -1,0 +1,23 @@
+---
+#configure dashboard env
+- name: mkdir dashboard
+  file:
+    path: /etc/ood/config/apps/dashboard
+    state: directory
+
+- name: dashboard env config
+  template:
+    src: dashboard/env.j2
+    dest: /etc/ood/config/apps/dashboard/env
+
+
+
+# - name: Enable reverse proxy
+#   replace:
+#     path: /etc/ood/config/ood_portal.yml
+#     regexp: '{{ item.regexp }}'
+#     replace: '{{ item.replace }}'
+#   with_items:
+#     - { regexp: "^#?host_regex:.*$", replace: "host_regex: '{{ host_regex }}'" }
+#     - { regexp: "^#?node_uri:.*$", replace: "node_uri: '/node'" }
+#     - { regexp: "^#?rnode_uri:.*$", replace: "rnode_uri: '/rnode'" }

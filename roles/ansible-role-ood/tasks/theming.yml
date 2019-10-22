@@ -1,0 +1,19 @@
+---
+# This play themes OpenOnDemand and deploys a logo for the welcome page. 
+
+- name: Deploy logo
+  copy:
+    src: "images/logo.png"
+    dest: "/var/www/ood/public/logo.png"
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+
+# Colour changes and text changes appear in templates/dashboard/env.j2
+# and are deployed with install.yml
+
+- name: Remove welcome text
+  lineinfile:
+    path: /var/www/ood/apps/sys/dashboard/config/locales/en.yml
+    regexp: '<p class="lead">OnDemand'
+    state: absent

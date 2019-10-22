@@ -1,0 +1,15 @@
+---
+stages:
+  - test
+molecule:
+  stage: test
+  tags:
+    - shell
+  script:
+    - docker -v
+    - python -V
+    - ansible --version
+    - molecule --version
+    - molecule test || if [ $? -eq 1 ]; then echo "success"; else exit 2; fi
+  only:
+    - master

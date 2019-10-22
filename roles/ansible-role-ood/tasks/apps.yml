@@ -1,0 +1,8 @@
+---
+# tasks file for ansible-role-ood
+
+- name: Remove Files App
+  file:
+    path: /var/www/ood/apps/sys/files
+    state: absent
+  when: kill_files_app is defined

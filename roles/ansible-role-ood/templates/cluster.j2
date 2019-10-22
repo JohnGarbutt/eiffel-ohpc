@@ -1,0 +1,29 @@
+---
+v2:
+  metadata:
+    title: "{{ cluster_name }}"
+  login:
+    host: "{{ cluster_login_fqdn }}"
+  job:
+    adapter: "slurm"
+    cluster: "{{ cluster_name }}"
+    bin: "{{ path_to_slurm }}"
+    conf: "{{ path_to_slurm_conf }}"
+    # bin_overrides:
+      # sbatch: ""
+      # squeue: ""
+      # scontrol: ""
+      # scancel: ""
+  batch_connect:
+    basic:
+      script_wrapper: |
+        module purge
+        %s
+      set_host: "host=$(hostname -s)"
+    vnc:
+      script_wrapper: |
+        module purge
+        export PATH="{{ path_to_turbovnc }}:$PATH"
+        export WEBSOCKIFY_CMD="{{ path_to_websockify_cmd }}"
+        %s
+      set_host: "host=$(hostname -s)"

@@ -1,0 +1,63 @@
+
+# Configured as part of OHPC install and used for Warewulf. Until we strip it
+# out of the OHPC role we kill it here. 
+#systemctl disable httpd.service
+- name: Stop and disable httpd.service on master
+  service: 
+    name: httpd.service 
+    state: stopped
+    enabled: no
+
+- name: Make sure epel is configured
+  yum:
+    name: epel-release
+    state: present
+
+- name: install needed packages
+  yum:
+    name: ['certbot','python2-certbot-apache', 'openssl', 'ca-certificates', 'haveged']
+    state: present
+
+# You may test the amount of entroy available with 
+# cat /proc/sys/kernel/random/entropy_avail
+# We install and enable haveged to generate a decent amount of randomness for
+# the next task
+- name: ensure haveged is running and enabled for boot
+  service:
+    name: haveged.service
+    state: started
+    enabled: yes
+
+# https://weakdh.org/
+- name: Generate dhparams file
+  command: openssl dhparam -out /etc/ssl/certs/dhparam.pem 4096
+  args:
+    creates: /etc/ssl/certs/dhparam.pem
+
+# Check if httpd24-httpd service is running
+- name: Check if httpd24-httpd service is running
+  command: "systemctl status httpd24-httpd.service"
+  ignore_errors: true
+  register: httpd24_state
+#If it is, kill it 
+- name: Killing httpd24 service.
+  service:
+    name: httpd24-httpd
+    state: stopped
+  when: httpd24_state.rc == 0
+
+# certbot certonly --dry-run --standalone --preferred-challenges http -d srcp-demo.hpc.cam.ac.uk
+# Run this task only the first time...
+- name: Create certificate
+  command: certbot certonly --non-interactive --email sysadmin@hpc.cam.ac.uk --agree-tos --standalone --preferred-challenges http -d "{{ public_url }}"
+  args:
+    creates: /etc/letsencrypt/live/"{{ public_url }}"/fullchain.pem
+
+# cronjob for renewing cert
+#
+- name: cronjob to renew lets encrypt cert and kick httpd
+  cron:
+    name: "renew cert and kick nginx"
+    minute: "0"
+    hour: "5"
+    job: 'certbot renew --pre-hook "systemctl stop httpd24-httpd" --post-hook "systemctl restart httpd24-httpd"'

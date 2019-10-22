@@ -1,0 +1,106 @@
+---
+
+- name: add software collections
+  yum:
+    name: centos-release-scl
+    state: present
+  when: ansible_distribution == "CentOS"
+
+- name: add open ondemand repo
+  yum:
+    name: "{{ ood_rpm_repo }}"
+    state: present
+
+- name: Add epel-release
+  yum:
+    name: epel-release
+    state: present
+
+- name: Disable SELinux
+  selinux:
+    state: disabled
+  ignore_errors: true
+
+- name: install packages
+  yum:
+    name: ['ondemand-1.6.7-1.el7.x86_64', 'nc']
+    state: present
+
+# iptables -I INPUT -p tcp -m multiport --dports 80 -m comment --comment "080 *:80" -j ACCEPT
+
+- name: Firewall rule - allow port 80/HTTP traffic
+  iptables:
+    chain: INPUT
+    destination_port: "80"
+    jump: ACCEPT
+    protocol: tcp
+
+- name: Firewall rule - allow port 443/HTTPS traffic
+  iptables:
+    chain: INPUT
+    destination_port: "443"
+    jump: ACCEPT
+    protocol: tcp
+
+- name: Create clusters.d directory
+  file:
+    path: /etc/ood/config/clusters.d
+    state: directory
+
+- name: Add cluster configuration files
+  template:
+    src: cluster.j2
+    dest: /etc/ood/config/clusters.d/{{ cluster_name }}.yml
+
+
+## Configure Interactive Jobs
+- name: Add interactive desktop directory
+  file:
+    dest: /etc/ood/config/apps/bc_desktop
+    state: directory
+    
+- name: Add interactive desktop settings
+  template:
+    src: bc_desktop/cluster.j2
+    dest: /etc/ood/config/apps/bc_desktop/{{ cluster_name }}.yml
+
+- name: Create interactive desktop job submit script directory
+  file:
+    path: /etc/ood/config/apps/bc_desktop/submit
+    state: directory
+
+- name: Add interactive desktop job submit script
+  template:
+    src: bc_desktop/submit.yml.erb
+    dest: /etc/ood/config/apps/bc_desktop/submit/submit.yml.erb
+
+- name: template out the ood-portal.yml
+  template:
+    src: ood_portal.yml.j2
+    dest: /etc/ood/config/ood_portal.yml
+
+
+- name: Handle our old school users
+  lineinfile:
+    path: /etc/ood/config/nginx_stage.yml
+    regexp: "^min_uid:"
+    line: "min_uid: 500"
+  when: fix_uid_500 is defined
+
+# - name: Stage http authz file for ood
+#   copy:
+#     src: htpasswd
+#     dest: /opt/rh/httpd24/root/etc/httpd/.htpasswd
+#     owner: root
+#     group: root
+#     mode: 0644
+
+- name: Build the updated Apache config
+  command: /opt/ood/ood-portal-generator/sbin/update_ood_portal
+  ignore_errors: true
+
+- name: Ensure httpd24-httpd service is running as configured.
+  service:
+    name: httpd24-httpd
+    state: started
+    enabled: true

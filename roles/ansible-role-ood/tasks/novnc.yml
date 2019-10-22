@@ -1,0 +1,29 @@
+#this play strips out the clipboard functionality from the novnc client.
+
+# This will need careful inspection as novnc increments through versions.
+#It will be better going forward to mirror the novnc repo, strip out clipboard bits
+# with a pipeline and tag.
+
+- name: copy app.vs.1
+  copy:
+      dest: /var/www/ood/apps/sys/dashboard/public/noVNC-1.0.0/app.v1.js
+      src: novnc/app.v1.js
+      backup: yes
+
+- name: copy vnc.html
+  copy:
+      dest: /var/www/ood/apps/sys/dashboard/public/noVNC-1.0.0/vnc.html
+      src: novnc/vnc.html
+      backup: yes
+
+- name: copy ui.js
+  copy:
+      dest: /var/www/ood/apps/sys/dashboard/public/noVNC-1.0.0/app/ui.js
+      src:  novnc/ui.js
+      backup: yes
+
+- name: copy rfb.js
+  copy:
+      dest: /var/www/ood/apps/sys/dashboard/public/noVNC-1.0.0/core/rfb.js
+      src: novnc/rfb.js
+      backup: yes
