@@ -36,7 +36,7 @@ Now you can get Terraform to create the infrastructure:
 
 You can create a cluster by doing:
 
-    ansible-playbook create.yml -i terraform_ohpc/ohpc_hosts
+    ansible-playbook create.yml -i terraform_ohpc/ohpc_hosts --vault-password-file=./.vaultpassword
 
 ## OpenOnDemand Config
 

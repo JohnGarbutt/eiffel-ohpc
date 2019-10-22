@@ -1,8 +1,16 @@
-OIDCProviderMetadataURL https://webdev07.hpc.osc.edu:8443/auth/realms/ondemand/.well-known/openid-configuration
-OIDCClientID        "webdev07.hpc.osc.edu"
-OIDCClientSecret    "1111111-1111-1111-1111-111111111111"
-OIDCRedirectURI      https://webdev07.hpc.osc.edu/oidc
-OIDCCryptoPassphrase "4444444444444444444444444444444444444444"
+OIDCProviderMetadataURL https://iris-iam.stfc.ac.uk/.well-known/openid-configuration
+OIDCClientID        "{{ secret_oidc_client_id }}"
+OIDCClientSecret    "{{ secret_oidc_client_secret }}"
+# TODO: remove this!!!
+OIDCSSLValidateServer Off
+
+OIDCClaimPrefix "OIDC-"
+OIDCResponseType "code"
+OIDCScope "openid email profile preferred_username"
+OIDCOAuthVerifyJwksUri "https://iris-iam.stfc.ac.uk/jwk"
+
+OIDCRedirectURI      http://{{ public_url }}/oidc
+OIDCCryptoPassphrase "{{ secret_oidc_crypto_passphrase }}"
 
 # Keep sessions alive for 8 hours
 OIDCSessionInactivityTimeout 28800
