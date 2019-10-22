@@ -1,4 +1,19 @@
 ---
+
+
+- hosts:
+  - cluster_login
+  become: yes
+  roles:
+    - role: ansible-role-ood
+      # public_url: "{{ ohpc_proxy_address }}"
+      cluster_name: ohpc
+      host_regex: ohpc-compute-\d+
+      use_lets_encrypt: true
+      certificate_email: jmfg2@cam.ac.uk
+      public_url: "128-232-224-91.cumulus-dev.openstack.hpc.cam.ac.uk"
+
+
 - hosts: localhost
   gather_facts: false
   vars:
@@ -90,9 +105,12 @@
   become: yes
   roles:
     - role: ansible-role-ood
-      public_url: "{{ ohpc_proxy_address }}"
+      # public_url: "{{ ohpc_proxy_address }}"
       cluster_name: ohpc
       host_regex: ohpc-compute-\d+
+      use_lets_encrypt: true
+      certificate_email: jmfg2@cam.ac.uk
+      public_url: "128-232-224-91.cumulus-dev.openstack.hpc.cam.ac.uk"
 
 - hosts:
   - cluster_batch

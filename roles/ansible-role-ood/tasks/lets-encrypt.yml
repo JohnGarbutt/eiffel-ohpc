@@ -1,13 +1,4 @@
-
-# Configured as part of OHPC install and used for Warewulf. Until we strip it
-# out of the OHPC role we kill it here. 
-#systemctl disable httpd.service
-- name: Stop and disable httpd.service on master
-  service: 
-    name: httpd.service 
-    state: stopped
-    enabled: no
-
+---
 - name: Make sure epel is configured
   yum:
     name: epel-release
@@ -49,7 +40,7 @@
 # certbot certonly --dry-run --standalone --preferred-challenges http -d srcp-demo.hpc.cam.ac.uk
 # Run this task only the first time...
 - name: Create certificate
-  command: certbot certonly --non-interactive --email "{{ email }}" --agree-tos --standalone --preferred-challenges http -d "{{ public_url }}"
+  command: certbot certonly --non-interactive --email "{{ certificate_email }}" --agree-tos --standalone --preferred-challenges http -d "{{ public_url }}"
   args:
     creates: /etc/letsencrypt/live/"{{ public_url }}"/fullchain.pem
 

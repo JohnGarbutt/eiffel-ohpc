@@ -9,7 +9,7 @@ OIDCResponseType "code"
 OIDCScope "openid email profile preferred_username"
 OIDCOAuthVerifyJwksUri "https://iris-iam.stfc.ac.uk/jwk"
 
-OIDCRedirectURI      http://{{ public_url }}/oidc
+OIDCRedirectURI      https://{{ public_url }}/oidc
 OIDCCryptoPassphrase "{{ secret_oidc_crypto_passphrase }}"
 
 # Keep sessions alive for 8 hours
