@@ -16,14 +16,14 @@
     name: epel-release
     state: present
 
-- name: Disable SELinux
+- name: SELinux permissive
   selinux:
     state: disabled
   ignore_errors: true
 
 - name: install packages
   yum:
-    name: ['ondemand-1.6.7-1.el7.x86_64', 'nc']
+    name: ['ondemand', 'nc', 'httpd-tools', 'httpd24-mod_auth_openidc']
     state: present
 
 # iptables -I INPUT -p tcp -m multiport --dports 80 -m comment --comment "080 *:80" -j ACCEPT
@@ -79,6 +79,13 @@
     src: ood_portal.yml.j2
     dest: /etc/ood/config/ood_portal.yml
 
+- name: add oidc config
+  template:
+    src: auth_oidc.conf.j2
+    dest: /opt/rh/httpd24/root/etc/httpd/conf.d/auth_openidc.conf
+  notify:
+    - restart httpd24
+  when: use_oidc
 
 - name: Handle our old school users
   lineinfile:
@@ -97,7 +104,6 @@
 
 - name: Build the updated Apache config
   command: /opt/ood/ood-portal-generator/sbin/update_ood_portal
-  ignore_errors: true
 
 - name: Ensure httpd24-httpd service is running as configured.
   service:

@@ -36,3 +36,5 @@ public_url:
 
 #use_lets_encrypt: if defind a valid SSL cert will be requested from lets encrypt
 use_lets_encrypt: false
+
+use_oidc: true

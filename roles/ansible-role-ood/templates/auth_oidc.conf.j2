@@ -1,0 +1,18 @@
+OIDCProviderMetadataURL https://webdev07.hpc.osc.edu:8443/auth/realms/ondemand/.well-known/openid-configuration
+OIDCClientID        "webdev07.hpc.osc.edu"
+OIDCClientSecret    "1111111-1111-1111-1111-111111111111"
+OIDCRedirectURI      https://webdev07.hpc.osc.edu/oidc
+OIDCCryptoPassphrase "4444444444444444444444444444444444444444"
+
+# Keep sessions alive for 8 hours
+OIDCSessionInactivityTimeout 28800
+OIDCSessionMaxDuration 28800
+
+# Set REMOTE_USER
+OIDCRemoteUserClaim preferred_username
+
+# Don't pass claims to backend servers
+OIDCPassClaimsAs environment
+
+# Strip out session cookies before passing to backend
+OIDCStripCookies mod_auth_openidc_session mod_auth_openidc_session_chunks mod_auth_openidc_session_0 mod_auth_openidc_session_1

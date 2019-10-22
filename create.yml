@@ -57,6 +57,18 @@
       yum:
         name: "{{ openhpc_repo_url }}"
         state: present
+    - name: Install software collections and epel
+      yum:
+        name: ["centos-release-scl", "epel-release"]
+        state: present
+    - name: update packages
+      yum:
+        name: '*'
+        state: latest
+      register: update_packages
+    - name: reboot if there are updates
+      reboot:
+      when: update_packages is changed
   roles:
     - role: stackhpc.openhpc
       openhpc_enable:

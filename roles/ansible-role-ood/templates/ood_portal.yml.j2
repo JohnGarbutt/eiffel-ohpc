@@ -92,12 +92,18 @@ ssl:
 # List of Apache authentication directives
 # NB: Be sure the appropriate Apache module is installed for this
 # Default: (see below, uses basic auth with an htpasswd file)
+{% if use_oidc %}
+auth:
+  - 'AuthType openid-connect'
+  - 'Require valid-user'
+{% else %}
 auth:
  - 'AuthType Basic'
  - 'AuthName "private"'
  - 'AuthUserFile "/opt/rh/httpd24/root/etc/httpd/.htpasswd"'
  - 'RequestHeader unset Authorization'
  - 'Require valid-user'
+{% endif %}
 
 # Redirect user to the following URI when accessing root URI
 # Example:
@@ -150,6 +156,7 @@ auth:
 # Default: '/pun/sys/dashboard/logout' (the Dashboard app provides a simple
 # HTML page explaining logout to the user)
 #logout_redirect: '/pun/sys/dashboard/logout'
+logout_redirect: '/oidc?logout=http%3A%2F%2F{{ public_url }}'
 
 #
 # Reverse proxy to backend nodes
@@ -215,6 +222,7 @@ rnode_uri: '{{ rnode_uri }}'
 #     oidc_uri: '/oidc'
 # Default: null (disable OpenID Connect support)
 #oidc_uri: null
+oidc_uri: '/oidc'
 
 # Sub-uri user is redirected to if they are not authenticated. This is used to
 # *discover* what ID provider the user will login through.

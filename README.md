@@ -15,7 +15,10 @@ You may find this useful to run the above ansible-playbook command:
 
 ## Create Infrastructure
 
-First download Terraform:
+Download the latest and unzip it:
+https://www.terraform.io/downloads.html
+
+For example:
 
     cd terraform_ohpc
     export terraform_version="0.12.12"
@@ -26,23 +29,17 @@ Now you can get Terraform to create the infrastructure:
 
     cd terraform_ohpc
     ./terraform init
+    ./terraform plan
     ./terraform apply
 
-## Usage
+## Install OpenHPC Slurm with Ansible
 
 You can create a cluster by doing:
 
     ansible-playbook create.yml -i terraform_ohpc/ohpc_hosts
 
-## Terraform
+## OpenOnDemand Config
 
-Download the latest and unzip it:
-https://www.terraform.io/downloads.html
+To setup a password for centos, try this on the login node:
 
-    cd terraform_examples
-    terraform init
-    terraform import openstack_containerinfra_cluster_v1.testk8s b0125e63-90e1-4f4e-8515-3bd109d07b87
-    terraform plan
-    terraform apply
-
-# Ansible
+    sudo htpasswd -c /opt/rh/httpd24/root/etc/httpd/.htpasswd centos
