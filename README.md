@@ -13,18 +13,26 @@ You may find this useful to run the above ansible-playbook command:
     pip install -U -r requirements.txt
     ansible-galaxy install -r requirements.yml
 
-## Inventory generation
+## Create Infrastructure
 
-You may find this useful to generate an inventory:
+First download Terraform:
 
-    . openrc
-    ./get-servers.py > hosts
+    cd terraform_ohpc
+    export terraform_version="0.12.12"
+    wget https://releases.hashicorp.com/terraform/${terraform_version}/terraform_${terraform_version}_linux_amd64.zip
+    unzip terraform_${terraform_version}_linux_amd64.zip
+
+Now you can get Terraform to create the infrastructure:
+
+    cd terraform_ohpc
+    ./terraform init
+    ./terraform apply
 
 ## Usage
 
 You can create a cluster by doing:
 
-    ansible-playbook create.yml -i hosts
+    ansible-playbook create.yml -i terraform_ohpc/ohpc_hosts
 
 ## Terraform
 

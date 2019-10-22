@@ -10,8 +10,18 @@ resource "openstack_compute_instance_v2" "login" {
   security_groups = ["default"]
 
   network {
-    name = "internet"
+    name = "private"
   }
+}
+
+
+resource "openstack_networking_floatingip_v2" "fip_1" {
+  pool = "internet"
+}
+
+resource "openstack_compute_floatingip_associate_v2" "fip_1" {
+  floating_ip = "${openstack_networking_floatingip_v2.fip_1.address}"
+  instance_id = "${openstack_compute_instance_v2.login.id}"
 }
 
 resource "openstack_compute_instance_v2" "compute" {
@@ -23,7 +33,7 @@ resource "openstack_compute_instance_v2" "compute" {
   count           = 1
 
   network {
-    name = "internet"
+    name = "private"
   }
 }
 
@@ -31,12 +41,13 @@ data  "template_file" "ohpc" {
     template = "${file("./template/ohpc.tpl")}"
     vars = {
       login = <<EOT
-${openstack_compute_instance_v2.login.name} ansible_host=${openstack_compute_instance_v2.login.network[0].fixed_ip_v4} ansible_user=centos
+${openstack_compute_instance_v2.login.name} ansible_host=${openstack_compute_instance_v2.login.network[0].fixed_ip_v4}
 EOT
       computes = <<EOT
 %{for compute in openstack_compute_instance_v2.compute}
-${compute.name} ansible_host=${compute.network[0].fixed_ip_v4} ansible_user=centos%{ endfor }
+${compute.name} ansible_host=${compute.network[0].fixed_ip_v4}%{ endfor }
 EOT
+      fip = "${openstack_networking_floatingip_v2.fip_1.address}"
     }
 }
 
