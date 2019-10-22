@@ -78,6 +78,8 @@
   template:
     src: ood_portal.yml.j2
     dest: /etc/ood/config/ood_portal.yml
+  notify:
+    - restart httpd24
 
 - name: add oidc config
   template:

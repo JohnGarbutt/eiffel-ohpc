@@ -6,9 +6,9 @@ v2:
     host: "{{ cluster_login_fqdn }}"
   job:
     adapter: "slurm"
-    cluster: "{{ cluster_name }}"
     bin: "{{ path_to_slurm }}"
     conf: "{{ path_to_slurm_conf }}"
+    # cluster: "{{ cluster_name }}"
     # bin_overrides:
       # sbatch: ""
       # squeue: ""

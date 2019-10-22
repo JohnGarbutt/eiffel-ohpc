@@ -1,6 +1,6 @@
 [all:vars]
 ansible_user=centos
-ansible_ssh_common_args='-o ProxyCommand="ssh centos@${fip} -W %h:%p"'
+ansible_ssh_common_args='-C -o ControlMaster=auto -o ControlPersist=60s -o ProxyCommand="ssh centos@${fip} -W %h:%p"'
 ohpc_proxy_address=${fip}
 
 [ohpc_login]
