@@ -6,12 +6,5 @@
 - name: including install.yml
   include_tasks: install.yml
 
-- name: adding apps.yml
-  include_tasks: apps.yml
-
 - name: configure the dashboard
   include_tasks: dashboard.yml
-
-- name: including play to remove copy and paste from novnc
-  include_tasks: novnc.yml
-  when: kill_copy_paste is defined

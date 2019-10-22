@@ -10,8 +10,6 @@
     src: dashboard/env.j2
     dest: /etc/ood/config/apps/dashboard/env
 
-
-
 # - name: Enable reverse proxy
 #   replace:
 #     path: /etc/ood/config/ood_portal.yml
