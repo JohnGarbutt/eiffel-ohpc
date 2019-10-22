@@ -92,3 +92,9 @@
     - role: ansible-role-ood
       public_url: "{{ ohpc_proxy_address }}"
       cluster_name: ohpc
+
+- hosts:
+  - cluster_batch
+  become: yes
+  roles:
+    - role: ood-compute

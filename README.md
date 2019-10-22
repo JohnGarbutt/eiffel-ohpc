@@ -3,16 +3,6 @@
 Example OpenHPC cluster built on:
 https://github.com/stackhpc/ansible-role-openhpc
 
-## Install
-
-You may find this useful to run the above ansible-playbook command:
-
-    virtualenv .venv
-    . .venv/bin/activate
-    pip install -U pip
-    pip install -U -r requirements.txt
-    ansible-galaxy install -r requirements.yml
-
 ## Create Infrastructure
 
 Download the latest and unzip it:
@@ -34,9 +24,17 @@ Now you can get Terraform to create the infrastructure:
 
 ## Install OpenHPC Slurm with Ansible
 
+You may find this useful to run the ansible-playbook command below:
+
+    virtualenv .venv
+    . .venv/bin/activate
+    pip install -U pip
+    pip install -U -r requirements.txt
+    ansible-galaxy install -r requirements.yml
+
 You can create a cluster by doing:
 
-    ansible-playbook create.yml -i terraform_ohpc/ohpc_hosts --vault-password-file=./.vaultpassword
+    ansible-playbook main.yml -i terraform_ohpc/ohpc_hosts --vault-password-file=./.vaultpassword
 
 ## OpenOnDemand Config
 

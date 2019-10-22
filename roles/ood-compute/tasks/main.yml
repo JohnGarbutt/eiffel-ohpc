@@ -1,0 +1,55 @@
+---
+
+- name: Add epel-release
+  yum:
+    name: epel-release
+    state: present
+
+- name: Add turbovnc repository
+  shell: yum-config-manager --add-repo=https://turbovnc.org/pmwiki/uploads/Downloads/TurboVNC.repo
+  args:
+    creates: /etc/yum.repos.d/TurboVNC.repo 
+
+- name: install turbovnc and websockify
+  yum:
+    name: [ "turbovnc", "python-websockify", "nmap" ]
+    state: present
+
+- name: make sure that profile.d has entry for turbovnc and websockify
+  template:
+    src: etc/profiled/vnc.sh.j2
+    dest: /etc/profile.d/vnc.sh
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+
+#group install x and xfce
+- name: install X Window system
+  yum:
+    name: "@X Window system"
+    state: present
+
+- name: install the 'xfce' environment group
+  yum:
+    name: "@xfce"
+    state: present
+
+# Firewalld gets installed and enabled during one of the above group installs.
+- name: Ensure firewalld service is killed
+  service:
+    name: firewalld
+    state: stopped
+    enabled: no
+
+- name: Determine the current default run-level
+  command: "systemctl get-default"
+  register: default_runlevel
+
+- name: Enable graphical target on boot
+  command: "systemctl set-default graphical.target"
+  when: '"multi-user.target" in default_runlevel.stdout'
+
+- name: Reboot compute nodes, if required
+  reboot:
+    reboot_timeout: 240
+  when: '"multi-user.target" in default_runlevel.stdout'

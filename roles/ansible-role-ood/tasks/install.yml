@@ -89,21 +89,6 @@
     - restart httpd24
   when: use_oidc
 
-- name: Handle our old school users
-  lineinfile:
-    path: /etc/ood/config/nginx_stage.yml
-    regexp: "^min_uid:"
-    line: "min_uid: 500"
-  when: fix_uid_500 is defined
-
-# - name: Stage http authz file for ood
-#   copy:
-#     src: htpasswd
-#     dest: /opt/rh/httpd24/root/etc/httpd/.htpasswd
-#     owner: root
-#     group: root
-#     mode: 0644
-
 - name: Build the updated Apache config
   command: /opt/ood/ood-portal-generator/sbin/update_ood_portal
 
