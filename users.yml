@@ -10,12 +10,10 @@
   roles:
   - role: singleplatform-eng.users
     users:
-      - username: foo
-        name: Foo Barrington
+      - username: jmfg2
         groups: []
         uid: 1001
-        home: /mnt/ohpc/foo
-        profile: |
-          alias ll='ls -lah'
+        home: /mnt/ohpc/jmfg2
+        generate_ssh_key: true
         ssh_key:
-          - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC5EVKNyTk0WoXqH+hue3EJhB8c4J5cYsKuw4DqMcEDsVd58n2LNqvuU+SceuLN5bV69FpBCR2swRUVe2tS+SiRVx6p+pa0hcOlRfdvFJCJ51fp3PW7IHS6tIl53ZLG50sDeXPh0gTRKG3o1gZFazOhGqmO9pd15FizzudMrGYCUGcrQ4DOEkSB/WhqK/wyPWP4/LxSzi1iY0gfU0gRxUpInTPBJJNOsS6+xvhKuuJm8TCNLRzrxrAG+L48eKasSphGNW8+/sxw4vMiEHxNT2XTwyRaOpNup3ovYOrvOyYkgVugHYeT/WTn180ykAPDXd518U8/bGF2SGyb0md45UIT stackhpc@seed"
+          - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCxvbvNZxtmEQszJEfKKLclh2Q/HNAb1jccOZa7N8HVhOlJhwN15SFcPzDC1e/0njo0pKa/3F+WedzO/wra0Z1WLxX7FMvYX4OFgb10xWc6VuniAb+Fil1mysjW3ft8nhMQ6Q8TNYSOq+lgtx4rxsr8fIH8AEAkyXOlqAcgr2J5dSH4bmPGMaHdegiaKMuDslvf6BynshHbwbmIY+1cWzQAVVZI3oipi2d3a7zZ2oCU+zHbzj7vfCTOPaYzjmk5PqKABAb9bR1Np6pGMH7GVcLcKi7kpaG+0XgmSD/TV3LBmkVMWMTu/h+gldMCEm/WN+L/iPYJWWxWgM7ZdeUIfLed ansible-generated on ohpc-login.novalocal"

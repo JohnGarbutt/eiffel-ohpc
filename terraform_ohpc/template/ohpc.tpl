@@ -22,7 +22,7 @@ ohpc_login
 ohpc_login
 
 [cluster_beegfs_oss:children]
-ohpc_compute
+ohpc_login
 
 [cluster_beegfs_client:children]
 ohpc_login

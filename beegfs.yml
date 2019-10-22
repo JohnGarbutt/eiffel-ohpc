@@ -9,7 +9,7 @@
     beegfs_state: present
     beegfs_force_format: no
     beegfs_interfaces:
-    - enp24s0f0
+    - eth0
     beegfs_rdma: no
     beegfs_mgmt_host: "{{ groups['cluster_beegfs_mgmt'] | first }}"
     beegfs_oss:
