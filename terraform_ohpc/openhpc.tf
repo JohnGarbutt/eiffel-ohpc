@@ -1,5 +1,5 @@
 provider "openstack" {
-  cloud = "cumulus-dev"
+  cloud = "cumulus"
 }
 
 resource "openstack_compute_instance_v2" "compute" {
@@ -11,7 +11,7 @@ resource "openstack_compute_instance_v2" "compute" {
   count           = 1
 
   network {
-    name = "private"
+    name = "demo-vxlan"
   }
 }
 
@@ -23,7 +23,7 @@ resource "openstack_compute_instance_v2" "login" {
   security_groups = ["default"]
 
   network {
-    name = "private"
+    name = "demo-vxlan"
   }
 }
 
