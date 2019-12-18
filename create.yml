@@ -89,6 +89,9 @@
       openhpc_cluster_name: ohpc
       openhpc_packages:
         - infiniband-diags
+        - lmod-ohpc # on cluster-batch nodes this is installed by stackhpc openhpc role
+        - gnu7-compilers-ohpc
+        - openmpi3-gnu7-ohpc
 
 #- hosts:
 #  - cluster_login
