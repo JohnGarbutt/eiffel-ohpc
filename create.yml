@@ -112,15 +112,13 @@
 #  roles:
 #    - role: ood-compute
 
-# The below is all pretty fragile for user home directory location ...
-
 - hosts: cluster_login
   become: yes
   tasks:
     - name: setup an ssh key for (existing) slurm user
       user:
         name: slurm
-        shell: /sbin/nologin # not sure if we need this; it is already set to this
+        shell: /bin/bash # don't like this, was /sbin/nologin but need to run ssh
         create_home: yes # default, but needs creating
         generate_ssh_key: yes
       register: slurm_user
@@ -130,12 +128,18 @@
       register: slurmkey
     - set_fact:
         slurm_key: "{{ slurmkey.content | b64decode | replace('\n', '') }}"
+    - name: create the resume stub script
+      template:
+        src: slurmscripts/resumestub.j2
+        dest: "{{ slurm_user.home }}/resumestub.sh"
+        owner: slurm
+        mode: 0744
 
 - hosts: localhost
   tasks:
     - name: add slurm login node key to localhost authorised keys
       lineinfile:
-        path: /home/{{ ansible_user }}/.ssh/authorized_keys
+        path: /home/{{ ansible_user }}/.ssh/authorized_keys # fragile for user home directory location?
         state: present
         line: "{{ hostvars['ohpc-login']['slurm_key'] }}" # TODO: not sure this is the right way to ref this host??
         #regexp: "{{ hostvars['ohpc-login']['slurm_key'] }}"
