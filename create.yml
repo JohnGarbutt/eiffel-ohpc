@@ -115,14 +115,18 @@
 # The below is all pretty fragile for user home directory location ...
 
 - hosts: cluster_login
+  become: yes
   tasks:
-    - name: create ssh key on slurm login node
-      openssh_keypair:
-        path: /home/{{ ansible_user }}/.ssh/id_rsa
-        comment: slurm-eiffel
-    - name: slurp public key from slurm login node
+    - name: setup an ssh key for (existing) slurm user
+      user:
+        name: slurm
+        shell: /sbin/nologin # not sure if we need this; it is already set to this
+        create_home: yes # default, but needs creating
+        generate_ssh_key: yes
+      register: slurm_user
+    - name: slurp slurm key
       slurp:
-        src: /home/{{ ansible_user }}/.ssh/id_rsa.pub
+        src: "{{ slurm_user.home }}/.ssh/id_rsa.pub"
       register: slurmkey
     - set_fact:
         slurm_key: "{{ slurmkey.content | b64decode | replace('\n', '') }}"
