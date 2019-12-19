@@ -84,7 +84,7 @@
       openhpc_slurm_control_host: "{{ groups['cluster_control'] | first }}"
       openhpc_slurm_partitions:
         - name: "compute"
-          min_nodes: "{{ groups['cluster_batch'] | length }}"
+          min_nodes: 2
           max_nodes: 4
           user: "centos"
       openhpc_cluster_name: ohpc
