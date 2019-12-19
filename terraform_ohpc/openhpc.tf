@@ -1,31 +1,32 @@
 provider "openstack" {
-  cloud = "cumulus"
+  cloud = "openstack"
 }
 
 resource "openstack_compute_instance_v2" "compute" {
   name            = "ohpc-compute-${count.index}"
-  image_name      = "CentOS7-1907"
-  flavor_name     = "general.v1.tiny"
-  key_pair        = "johng"
+  image_name      = "CentOS 7.6"
+  flavor_name     = "hotdog"
+  key_pair        = "steveb"
   security_groups = ["default"]
-  count           = 1
+  count           = 2
 
   network {
-    name = "demo-vxlan"
+    name = "gateway"
   }
 }
 
 resource "openstack_compute_instance_v2" "login" {
   name            = "ohpc-login"
-  image_name      = "CentOS7-1907"
-  flavor_name     = "general.v1.tiny"
-  key_pair        = "johng"
+  image_name      = "CentOS 7.6"
+  flavor_name     = "hotdog"
+  key_pair        = "steveb"
   security_groups = ["default"]
 
   network {
-    name = "demo-vxlan"
+    name = "gateway"
   }
 }
+
 
 resource "openstack_networking_floatingip_v2" "fip_1" {
   pool = "internet"
