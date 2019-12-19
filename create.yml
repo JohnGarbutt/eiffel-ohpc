@@ -112,3 +112,27 @@
 #  roles:
 #    - role: ood-compute
 
+# The below is all pretty fragile for user home directory location ...
+
+- hosts: cluster_login
+  tasks:
+    - name: create ssh key on slurm login node
+      openssh_keypair:
+        path: /home/{{ ansible_user }}/.ssh/id_rsa
+        comment: slurm-eiffel
+    - name: slurp public key from slurm login node
+      slurp:
+        src: /home/{{ ansible_user }}/.ssh/id_rsa.pub
+      register: slurmkey
+    - set_fact:
+        slurm_key: "{{ slurmkey.content | b64decode | replace('\n', '') }}"
+
+- hosts: localhost
+  tasks:
+    - name: add slurm login node key to localhost authorised keys
+      lineinfile:
+        path: /home/{{ ansible_user }}/.ssh/authorized_keys
+        state: present
+        line: "{{ hostvars['ohpc-login']['slurm_key'] }}" # TODO: not sure this is the right way to ref this host??
+        #regexp: "{{ hostvars['ohpc-login']['slurm_key'] }}"
+        
