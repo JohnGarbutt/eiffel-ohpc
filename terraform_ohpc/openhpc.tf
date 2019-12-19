@@ -6,7 +6,7 @@ resource "openstack_compute_instance_v2" "compute" {
   name            = "ohpc-compute-${count.index}"
   image_name      = "CentOS 7.6"
   flavor_name     = "hotdog"
-  key_pair        = "steveb"
+  key_pair        = "centos-at-steveb-control"
   security_groups = ["default"]
   count           = 2
 
@@ -19,7 +19,7 @@ resource "openstack_compute_instance_v2" "login" {
   name            = "ohpc-login"
   image_name      = "CentOS 7.6"
   flavor_name     = "hotdog"
-  key_pair        = "steveb"
+  key_pair        = "centos-at-steveb-control"
   security_groups = ["default"]
 
   network {
