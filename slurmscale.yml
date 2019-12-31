@@ -1,0 +1,61 @@
+- hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Get ansible controlhost's SSH key ## TODO: this is broken as is for "localhost" not IP address!
+      command: "ssh-keyscan -t rsa localhost"
+      register: hostkeys
+      changed_when: False
+      delegate_to: "localhost"
+    - debug:
+        var: hostkeys
+    - set_fact:
+        ssh_keys: "{{ hostkeys.stdout_lines }}"
+
+- hosts: cluster_login
+  become: yes
+  tasks:
+    - name: setup an ssh key for (existing) slurm user
+      user:
+        name: slurm
+        shell: /bin/bash # don't like this, was /sbin/nologin but need to run ssh
+        create_home: yes # default, but needs creating
+        generate_ssh_key: yes
+      register: slurm_user
+    - name: slurp slurm key
+      slurp:
+        src: "{{ slurm_user.home }}/.ssh/id_rsa.pub"
+      register: slurmkey
+    - set_fact:
+        slurm_key: "{{ slurmkey.content | b64decode | replace('\n', '') }}"
+    - name: create the resume stub script
+      template:
+        src: slurmscripts/resumestub.j2
+        dest: "{{ slurm_user.home }}/resumestub.sh"
+        owner: slurm
+        mode: 0744
+    - name: create the suspend stub script
+      template:
+        src: slurmscripts/suspendstub.j2
+        dest: "{{ slurm_user.home }}/suspendstub.sh"
+        owner: slurm
+        mode: 0744
+    - name: add ansible control hosts key to known hosts
+      blockinfile:
+        block: |
+          {% for line in hostvars['localhost']['ssh_keys'] %}
+          {{ line }}
+          {% endfor %}
+        create: true
+        marker: "# {mark} MANAGED BLOCK FOR ansible control host"
+        path: "{{ slurm_user.home }}/.ssh/known_hosts"
+#      loop: "{{ hostvars['localhost']['ssh_keys'] }}"
+      
+- hosts: localhost
+  tasks:
+    - name: add slurm login node key to localhost authorised keys
+      lineinfile:
+        path: /home/{{ ansible_user }}/.ssh/authorized_keys # fragile for user home directory location?
+        state: present
+        line: "{{ hostvars['ohpc-login']['slurm_key'] }}" # TODO: not sure this is the right way to ref this host??
+        #regexp: "{{ hostvars['ohpc-login']['slurm_key'] }}"
+        

@@ -1,0 +1,23 @@
+#!/usr/bin/bash
+
+# Create new slurm nodes
+# Runs on slurm control node (ohpc-login) as user SlurmUser ("slurm")
+# Is called by slurmcld with names of nodes (in Slurm's hostlist expression format) to be brought back from power savings mode.
+
+RESUMESCRIPT=/home/centos/eiffel-ohpc/slurmscripts/resume.sh
+ANSIBLE_HOST=93.186.40.108
+LOGFILE=/var/tmp/slurmpwr.log
+# TODO: check this is writeable and find some way of erroring if not!!
+
+exec 3>&1 4>&2
+trap 'exec 2>&4 1>&3' 0 1 2 3
+exec 1>$LOGFILE 2>&1
+
+echo "`date`: $0 $*"
+
+# expand hostlist
+resume_hosts=$(scontrol show hostnames $1 | tr "\n" " ")
+echo "resuming instances $resume_hosts"
+
+# call the script on the ansible/tf control host to add these
+ssh {{ ansible_user }}@$ANSIBLE_HOST -- $RESUMESCRIPT $resume_hosts

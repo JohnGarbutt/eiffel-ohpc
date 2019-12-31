@@ -1,5 +1,5 @@
-# By default generates 0-$(min_node-1) compute, else use
-# terraform CMD -var='nodenames=ohpc-compute-3 ohpc-compute-9'
+# By default generates 0-$(min_node-1) compute, else use e.g.
+#   terraform apply -var 'nodenames=ohpc-compute-0 ohpc-compute-1 ohpc-compute-2'
 # to specify which nodes.
 # Note compute instances are for_each members and have IDs like
 #	openstack_compute_instance_v2.compute["ohpc-compute-3"]
