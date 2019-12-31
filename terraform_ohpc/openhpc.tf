@@ -1,15 +1,37 @@
+# By default generates 0-$(min_node-1) compute, else use
+# terraform CMD -var='nodenames=ohpc-compute-3 ohpc-compute-9'
+# to specify which nodes.
+# Note compute instances are for_each members and have IDs like
+#	openstack_compute_instance_v2.compute["ohpc-compute-3"]
+
+variable "min_nodes" {
+  type = number
+  default = 2
+  description = "The minimum number of compute nodes (= number of persistent compute nodes) in the cluster"
+}
+
+variable "nodenames" {
+  type = string
+  default = ""
+  description = "Space-separated list of compute node names - leave empty for only minimum nodes"
+}
+
+locals {
+  nodeset = var.nodenames != "" ? toset(split(" ", var.nodenames)) : toset([for s in range(var.min_nodes): "ohpc-compute-${s}"])
+}
+
 provider "openstack" {
   cloud = "openstack"
 }
 
 resource "openstack_compute_instance_v2" "compute" {
-  name            = "ohpc-compute-${count.index}"
+  for_each        = local.nodeset
+  name            = each.key
   image_name      = "CentOS 7.6"
   flavor_name     = "hotdog"
   key_pair        = "centos-at-steveb-control"
   security_groups = ["default"]
-  count           = 2
-
+  
   network {
     name = "gateway"
   }
@@ -21,12 +43,11 @@ resource "openstack_compute_instance_v2" "login" {
   flavor_name     = "hotdog"
   key_pair        = "centos-at-steveb-control"
   security_groups = ["default"]
-
+  
   network {
     name = "gateway"
   }
 }
-
 
 resource "openstack_networking_floatingip_v2" "fip_1" {
   pool = "internet"
