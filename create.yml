@@ -24,6 +24,7 @@
     - name: Wait for proxy
       wait_for:
         host: "{{ ohpc_proxy_address }}"
+        port: 22
         
     - name: Scan for SSH keys
       command: "ssh {{ ansible_user }}@{{ ohpc_proxy_address }} ssh-keyscan -t rsa {{ hostvars[item]['ansible_host'] }}"
