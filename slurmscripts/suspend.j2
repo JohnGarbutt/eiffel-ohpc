@@ -1,0 +1,25 @@
+#!/usr/bin/bash
+
+# Take down slurm nodes
+# Runs on slurm control node (ohpc-login) as user SlurmUser ("slurm")
+# Is called by slurmcld with names of nodes (in Slurm's hostlist expression format) to be put into power savings mode.
+
+SCALESCRIPT=/home/centos/eiffel-ohpc/slurmscripts/scale.sh
+LOGFILE=/var/tmp/slurmpwr.log
+# TODO: check this is writeable and find some way of erroring if not!!
+
+exec 3>&1 4>&2
+trap 'exec 2>&4 1>&3' 0 1 2 3
+exec 1>$LOGFILE 2>&1
+
+echo "`date`: $0 $*"
+
+# expand hostlist - space-separated rather than one-per line:
+suspend_hosts=$(scontrol show hostnames $1 | tr '\n' ' ')
+echo "suspending instances $suspend_hosts"
+
+# call the script on the ansible/tf control host to remove these
+ssh {{ ansible_user }}@{{ control_host }} -- $SCALESCRIPT suspend $suspend_hosts
+
+# tell slurmd (don't need sudo as running as slurm)
+scontrol update NodeName=$1 state=POWER_DOWN
