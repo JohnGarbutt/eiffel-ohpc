@@ -28,10 +28,15 @@ then
   $TERRAFORM apply -var nodenames="$target_compute" -refresh=true -auto-approve
   cat ohpc_hosts
   cd ~/eiffel-ohpc/
-  ansible-playbook -v main.yml -i terraform_ohpc/ohpc_hosts
+  ansible-playbook main.yml -i terraform_ohpc/ohpc_hosts
 else
+  target_compute=$existing_compute
   for host in $compute_changes; do
 	target_compute=${target_compute//$host/}
   done
   echo "target compute (suspend): target_compute"
+  # remove instances
+  $TERRAFORM apply -var nodenames="$target_compute" -refresh=true -auto-approve
+  # now rewrite hosts file (TODO- need to fix this!)
+  #$TERRAFORM apply -var nodenames="$target_compute" -refresh=true -auto-approve
 fi

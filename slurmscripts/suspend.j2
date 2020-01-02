@@ -16,6 +16,7 @@ echo "`date`: $0 $*"
 
 # expand hostlist - space-separated rather than one-per line:
 suspend_hosts=$(scontrol show hostnames $1 | tr '\n' ' ')
+# TODO: handle not being passed any hosts!
 echo "suspending instances $suspend_hosts"
 
 # call the script on the ansible/tf control host to remove these
