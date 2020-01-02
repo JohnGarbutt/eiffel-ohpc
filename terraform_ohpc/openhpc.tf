@@ -10,6 +10,12 @@ variable "min_nodes" {
   description = "The minimum number of compute nodes (= number of persistent compute nodes) in the cluster"
 }
 
+variable "control_host" {
+  type = string
+  default = "93.186.40.108"
+  description = "Public IP address for ansible/terraform control host"
+}
+
 variable "nodenames" {
   type = string
   default = ""
@@ -69,10 +75,12 @@ EOT
 ${compute.name} ansible_host=${compute.network[0].fixed_ip_v4}%{ endfor }
 EOT
       fip = "${openstack_networking_floatingip_v2.fip_1.address}"
+	  control_host = "${var.control_host}"
     }
 }
 
 resource "local_file" "hosts" {
   content  = "${data.template_file.ohpc.rendered}"
   filename = "ohpc_hosts"
+  depends_on = [local.nodeset]
 }
