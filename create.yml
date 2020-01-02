@@ -45,8 +45,14 @@
       loop: "{{ keyscan_results['results'] }}"
       loop_control:
         index_var: index
-
-
+  
+  - name: Wait for servers
+      wait_for:
+        host: "{{ inventory_hostname }}"
+        port: 22
+        state: started
+        timeout: 360
+    
 - hosts:
   - cluster_login
   - cluster_control
@@ -55,8 +61,6 @@
   vars:
     openhpc_repo_url: "https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm"
   pre_tasks:
-    - name: Wait for servers
-      wait_for_connection:
       
     - name: Ensure enough entropy
       yum:
