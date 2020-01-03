@@ -25,7 +25,30 @@
       wait_for:
         host: "{{ ohpc_proxy_address }}"
         port: 22
+        state: started
+        timeout: 360
         
+- name: Wait for servers
+  hosts:
+  - cluster_login
+  - cluster_control
+  - cluster_batch
+  gather_facts: false
+  tasks:
+    - name: Wait for servers
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: 22
+        state: started
+        timeout: 360
+      delegate_to: localhost
+
+- name: Configure host keys
+  hosts: localhost
+  vars:
+    all_hosts: "{{ groups['cluster_batch'] + groups['cluster_login'] }}"  
+  gather_facts: false
+  tasks:  
     - name: Scan for SSH keys
       command: "ssh {{ ansible_user }}@{{ ohpc_proxy_address }} ssh-keyscan -t rsa {{ hostvars[item]['ansible_host'] }}"
       register: keyscan_results
@@ -45,15 +68,9 @@
       loop: "{{ keyscan_results['results'] }}"
       loop_control:
         index_var: index
-  
-    - name: Wait for servers
-      wait_for:
-        host: "{{ inventory_hostname }}"
-        port: 22
-        state: started
-        timeout: 360
-    
-- hosts:
+      
+- name: Configure servers
+  hosts:
   - cluster_login
   - cluster_control
   - cluster_batch
@@ -61,7 +78,6 @@
   vars:
     openhpc_repo_url: "https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm"
   pre_tasks:
-      
     - name: Ensure enough entropy
       yum:
         name: rng-tools
