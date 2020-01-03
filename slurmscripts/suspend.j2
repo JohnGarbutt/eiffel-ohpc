@@ -4,7 +4,7 @@
 # Runs on slurm control node (ohpc-login) as user SlurmUser ("slurm")
 # Is called by slurmcld with names of nodes (in Slurm's hostlist expression format) to be put into power savings mode.
 
-SCALESCRIPT=/home/centos/eiffel-ohpc/slurmscripts/scale.sh
+SCALESCRIPT=/home/centos/eiffel-ohpc/slurmscripts/scale.py
 LOGFILE=/var/tmp/slurmpwr.log
 # TODO: check this is writeable and find some way of erroring if not!!
 
