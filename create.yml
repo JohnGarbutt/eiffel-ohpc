@@ -1,11 +1,16 @@
 ---
-- name: Configure keys
+- name: Configure proxy's keys
   hosts: localhost
-  vars:
-    all_hosts: "{{ groups['cluster_batch'] + groups['cluster_login'] }}"  
   gather_facts: false
   tasks:  
-    - name: Scan for proxy's keys
+    - name: Wait for proxy
+      wait_for:
+        host: "{{ ohpc_proxy_address }}"
+        port: 22
+        state: started
+        timeout: 360
+        
+    - name: Scan for proxy's SSH keys
       command: "ssh-keyscan -t rsa {{ ohpc_proxy_address }}"
       register: keyscan_results
       changed_when: False
@@ -20,13 +25,6 @@
         create: true
         marker: "# {mark} MANAGED BLOCK FOR OpenHPC proxy"
         path: "~/.ssh/known_hosts"
-    
-    - name: Wait for proxy
-      wait_for:
-        host: "{{ ohpc_proxy_address }}"
-        port: 22
-        state: started
-        timeout: 360
         
 - name: Wait for servers
   hosts:
@@ -43,13 +41,13 @@
         timeout: 360
       delegate_to: localhost
 
-- name: Configure host keys
+- name: Configure server's keys
   hosts: localhost
   vars:
     all_hosts: "{{ groups['cluster_batch'] + groups['cluster_login'] }}"  
   gather_facts: false
   tasks:  
-    - name: Scan for SSH keys
+    - name: Scan for server's SSH keys
       command: "ssh {{ ansible_user }}@{{ ohpc_proxy_address }} ssh-keyscan -t rsa {{ hostvars[item]['ansible_host'] }}"
       register: keyscan_results
       changed_when: False
