@@ -50,3 +50,15 @@
         line: "{{ hostvars['ohpc-login']['slurm_key'] }}" # TODO: not sure this is the right way to ref this host??
         #regexp: "{{ hostvars['ohpc-login']['slurm_key'] }}"
         
+- hosts:
+  - cluster_login
+  - cluster_control
+  - cluster_batch
+  tasks:
+    - name: Ensure Slurm services are running
+      service:
+        name: "{{ openhpc_slurm_service }}"
+        state: "started"
+      when:
+        - openhpc_slurm_service is not none    
+  
