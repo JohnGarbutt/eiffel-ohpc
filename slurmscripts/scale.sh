@@ -17,7 +17,7 @@ cd ~/eiffel-ohpc/terraform_ohpc
 # get existing compute instances as a space-separated list *with trailing space*:
 # TODO: replace literal "ohpc-compute-" with templated name?
 existing_compute=$($TERRAFORM state list openstack_compute_instance_v2.compute | grep -o "ohpc-compute-[0-9]\+" | tr "\n" " ")
-echo existing compute: $existing_compute
+echo "existing compute: '$existing_compute'"
 
 # create target instance string:
 if [ "$mode" = "resume" ]
@@ -33,8 +33,10 @@ else
   target_compute=$existing_compute
   for host in $compute_changes; do
 	target_compute=${target_compute//$host/}
+	echo "'$host': '$target_compute'"
   done
-  echo "target compute (suspend): target_compute"
+  echo "target_compute (suspend): '$target_compute'"
+  exit
   # remove instances
   $TERRAFORM apply -var nodenames="$target_compute" -refresh=true -auto-approve
   # now rewrite hosts file (TODO- need to fix this!)
