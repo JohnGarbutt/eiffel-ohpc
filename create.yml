@@ -111,11 +111,6 @@
         name: kernel
         state: latest
       register: update_kernel
-#    - name: update packages
-#      yum:
-#        name: '*'
-#        state: latest
-#      register: update_packages
     - name: reboot if there are updates
       reboot:
       when: update_kernel is changed
@@ -135,7 +130,6 @@
       openhpc_cluster_name: ohpc
       openhpc_packages:
         - infiniband-diags
-        - lmod-ohpc # on cluster-batch nodes this is installed by stackhpc openhpc role
         - gnu7-compilers-ohpc
         - openmpi3-gnu7-ohpc
 
