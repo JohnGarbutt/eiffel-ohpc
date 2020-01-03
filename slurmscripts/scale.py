@@ -64,6 +64,9 @@ def main():
         if rc:
             exit('ERROR: return code of {rc} from {ansible_main}'.format(rc=rc, ansible_main=ansible_main))
     
+    # on suspend:
+    # - does the ohpc_hosts file need to be regenerated? YES
+    # does /etc/hosts need rewriting to avoid slurm thinking nodes can't be contacted??
     # now rewrite hosts file (TODO- need to fix this!)
   # #$TERRAFORM apply -var nodenames="$target_compute" -refresh=true -auto-approve
          
