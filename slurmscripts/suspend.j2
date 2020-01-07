@@ -7,7 +7,7 @@
 LOGFILE=/var/tmp/slurmpwr.log # TODO: check this is writeable and find some way of erroring if not!!
 (
 SCALESCRIPT=/home/centos/eiffel-ohpc/slurmscripts/scale.py
-
+# TODO: check this is writeable and find some way of erroring if not!!
 echo "`date`: $0 $*"
 
 # expand hostlist - space-separated rather than one-per line:
@@ -17,8 +17,5 @@ echo "suspending instances $suspend_hosts"
 
 # call the script on the ansible/tf control host to remove these
 ssh {{ ansible_user }}@{{ control_host }} -- $SCALESCRIPT suspend $suspend_hosts
-
-# tell slurmd (don't need sudo as running as slurm)
-scontrol update NodeName=$1 state=POWER_DOWN
 
 ) >> $LOGFILE
