@@ -1,3 +1,5 @@
+# NB: this won't run on its own as it relies on the openhpc role setting `openhpc_slurm_service`
+
 - hosts: cluster_login
   become: yes
   tasks:
@@ -51,9 +53,9 @@
         #regexp: "{{ hostvars['ohpc-login']['slurm_key'] }}"
         
 - hosts:
-  - cluster_login
   - cluster_control
   - cluster_batch
+  become: yes
   tasks:
     - name: Ensure Slurm services are running
       service:
