@@ -9,11 +9,11 @@
 from __future__ import print_function
 import sys, subprocess, os, re
 
-VENV = os.path.expanduser('~/.venv/bin/activate')
-TF_CMD = os.path.expanduser('~/terraform')
-TF_DIR = os.path.expanduser('~/eiffel-ohpc/terraform_ohpc')
+TF_CMD = 'terraform'
 ANSIBLE_CMD = 'ansible-playbook'
-ANSIBLE_DIR = os.path.expanduser('~/eiffel-ohpc/')
+VENV = '{{ venv_dir }}'
+TF_DIR = '{{ playbook_dir }}/terraform_ohpc'
+ANSIBLE_DIR = '{{ playbook_dir }}'
 
 def shell_source(script):
     """ Emulate the action of "source" in bash, setting environment vars.

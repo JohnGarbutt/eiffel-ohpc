@@ -5,9 +5,9 @@
 # Is called by slurmcld with names of nodes (in Slurm's hostlist expression format) to be put into power savings mode.
 
 LOGFILE=/var/tmp/slurmpwr.log # TODO: check this is writeable and find some way of erroring if not!!
-(
-SCALESCRIPT=/home/centos/eiffel-ohpc/slurmscripts/scale.py
 # TODO: check this is writeable and find some way of erroring if not!!
+(
+SCALESCRIPT={{ playbook_dir }}/slurmscripts/scale.py
 echo "`date`: $0 $*"
 
 # expand hostlist - space-separated rather than one-per line:
