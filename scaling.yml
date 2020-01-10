@@ -34,6 +34,8 @@
       template:
         src: "{{ playbook_dir }}/slurmscripts/scale.j2"
         dest: "{{ playbook_dir }}/slurmscripts/scale.py"
+        owner: centos
+        mode: 0744
       delegate_to: localhost
     - name: Get ansible/tf control host's SSH key
       command: "ssh-keyscan -t rsa {{ control_host }}"

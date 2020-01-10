@@ -18,4 +18,4 @@ echo "suspending instances $suspend_hosts"
 # call the script on the ansible/tf control host to remove these
 ssh {{ ansible_user }}@{{ control_host }} -- $SCALESCRIPT suspend $suspend_hosts
 
-) >> $LOGFILE
+) &>> $LOGFILE
