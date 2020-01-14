@@ -1,9 +1,7 @@
-# NB: this won't run on its own as it relies on the openhpc role setting `openhpc_slurm_service`
-
 - hosts: cluster_login
   become: yes
   vars:
-    venv: '/home/centos/effiel-ohpc/.venv/bin/activate'
+    venv: '/home/centos/eiffel-ohpc/.venv/bin/activate'
   tasks:
     - name: setup an ssh key for (existing) slurm user
       user:
@@ -71,4 +69,5 @@
         name: "{{ openhpc_slurm_service }}"
         state: "started"
       when:
-        - openhpc_slurm_service is not none    
+        - openhpc_slurm_service is defined
+        - openhpc_slurm_service is not none
