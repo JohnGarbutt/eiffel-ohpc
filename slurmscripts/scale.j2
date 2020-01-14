@@ -51,6 +51,8 @@ def main():
     target_compute = ' '.join(target_compute)
     print('target_compute ({mode}):'.format(mode=mode), target_compute)
     
+    # remove ohpc_hosts file to force regeneration:
+    tf_destroy = '{TF_CMD} destroy -target='
     # run terraform to change instances:
     tf_apply = '{TF_CMD} apply -var nodenames="{target_compute}" -refresh=true -auto-approve'.format(TF_CMD=TF_CMD, target_compute=target_compute)
     rc = subprocess.call(tf_apply, shell=True, cwd=TF_DIR)
@@ -63,13 +65,12 @@ def main():
         rc = subprocess.call(ansible_main, shell=True, cwd=ANSIBLE_DIR)
         if rc:
             exit('ERROR: return code of {rc} from {ansible_main}'.format(rc=rc, ansible_main=ansible_main))
-    
-    # on suspend:
-    # - does the ohpc_hosts file need to be regenerated? YES
-    # does /etc/hosts need rewriting to avoid slurm thinking nodes can't be contacted??
-    # now rewrite hosts file (TODO- need to fix this!)
-  # #$TERRAFORM apply -var nodenames="$target_compute" -refresh=true -auto-approve
-         
+    elif mode == 'suspend': # update the ohpc_hosts file
+        tf_update = '{TF_CMD} apply -target=local_file.hosts -var nodenames="{target_compute}" -refresh=true -auto-approve'.format(TF_CMD=TF_CMD, target_compute=target_compute)
+        rc = subprocess.call(tf_update, shell=True, cwd=TF_DIR)
+        if rc:
+            exit('ERROR: return code of {rc} from {tf_update}'.format(rc=rc, tf_update=tf_update))
+
 if __name__ == '__main__':
     main()
     
