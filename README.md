@@ -1,43 +1,177 @@
 # eiffel-ohpc
 
-Example OpenHPC cluster built on:
+Example OpenHPC slurm cluster with autoscaling built on:
 https://github.com/stackhpc/ansible-role-openhpc
 
-## Create Infrastructure
+The cluster has a combined slurm control/login node and multiple compute nodes, some of which may be added on demand as required to service the slurm queue.
 
-Download the latest and unzip it:
-https://www.terraform.io/downloads.html
+Code and instructions below are for [sausage cloud](https://compute.sausage.cloud/) but other OpenStack clouds will be similar.
 
-For example:
+## Initial setup
 
-    cd terraform_ohpc
-    export terraform_version="0.12.12"
-    wget https://releases.hashicorp.com/terraform/${terraform_version}/terraform_${terraform_version}_linux_amd64.zip
-    unzip terraform_${terraform_version}_linux_amd64.zip
+On [https://compute.sausage.cloud/](https://compute.sausage.cloud/):
 
-Now you can get Terraform to create the infrastructure:
+- Create the ansible/tf control host using:
+  - Centos7.6 chipolata instance (smaller VMs are too small for the image)
+  - The `gateway` network
+  - A key pair from your local machine 
+- Associate a floating ip
+- From Project | API Access download a `clouds.yaml` file.
 
-    cd terraform_ohpc
-    ./terraform init
-    ./terraform plan
-    ./terraform apply
+Connect to the ansible/tf control host over ssh then:
+- Upload clouds.yaml to ~/.config/openstack and in the `auth` section add a `password: <your openstack password>` pair.
+- Install wget, git, unzip, pip and virtualenv:
 
-## Install OpenHPC Slurm with Ansible
+  ```shell
+  sudo yum install -y wget git unzip
+  curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+  sudo python get-pip.py
+  sudo pip install virtualenv
+  ```
 
-You may find this useful to run the ansible-playbook command below:
+- Generate some entropy (else eventually everything stalls):
 
-    virtualenv .venv
-    . .venv/bin/activate
-    pip install -U pip
-    pip install -U -r requirements.txt
-    ansible-galaxy install -r requirements.yml
+  ```shell
+  sudo yum install -y rng-tools
+  sudo systemctl start rngd
+  cat /proc/sys/kernel/random/entropy_avail # should be > 200
+  ```
 
-You can create a cluster by doing:
+  Clone the eiffel repo and checkout the **sausage branch:
 
-    ansible-playbook main.yml -i terraform_ohpc/ohpc_hosts --vault-password-file=./.vaultpassword
+  ```shell
+  git clone https://github.com/stackhpc/eiffel-ohpc.git 
+  cd ~/eiffel-ohpc
+  git checkout sausage
+  ```
 
-## OpenOnDemand Config
+- Setup a virtualenv with the requirements:
 
-To setup a password for centos, try this on the login node:
+  ```shell
+  cd ~/eiffel-ohpc
+  virtualenv .venv
+  . .venv/bin/activate
+  pip install -U pip
+  pip install -U -r requirements.txt
+  ansible-galaxy install -r requirements.yml # creates /home/centos/.ansible/roles/
+  ```
 
-    sudo htpasswd -c /opt/rh/httpd24/root/etc/httpd/.htpasswd centos
+- Install terraform on $PATH (NB we need to be able to find this without a shell, so put it in /bin rather than adding it to ~/bin or modifying .bashrc etc):
+
+  ```shell
+  cd
+  wget https://releases.hashicorp.com/terraform/0.12.18/terraform_0.12.18_linux_amd64.zip
+  unzip terraform*.zip
+  sudo cp terraform /bin
+  ```
+
+- Replace the galaxy stackhpc.openhpc role with a git clone and checkout appropriate branch:
+
+  ```shell
+  cd ~/.ansible/roles/
+  rm -rf stackhpc.openhpc/
+  git clone https://github.com/stackhpc/ansible-role-openhpc.git stackhpc.openhpc
+  cd stackhpc.openhpc
+  git checkout eiffel-autoscale
+  ```
+
+- Create a keypair on the ansible/tf control host using `ssh-keygen` and upload the public key to openstack through the sausage web GUI.
+
+- Modify  `~/eiffel-ohpc/terraform_ohpc/openhpc.tf` so that:
+
+    - `control_host` is the public IP for the ansible/terraform control host
+    - `min_nodes` is the minimum number of nodes / number of persistent nodes you want
+    - In provider `"openstack":  cloud = "openstack"`
+    - For compute and login nodes:
+        - The `key_pair` name is for the key pair created on the ansible/tf control host - **NB:** NOT the keypair used to login to the ansible/tf control host - agent forwarding will not work with this autoscaling setup
+        - Network name should be "gateway"
+        - `flavor_name` is "hotdog"
+        - Image names: "Centos 7.6"
+
+- Modify ` ~/eiffel-ohpc/create.py` so that:
+
+    - `min_nodes` matches `openhpc.tf`
+    - `max_nodes` is the max number of nodes the cluster can have
+    - `user` is appropriate
+
+## Creating a cluster
+
+On the ansible/tf control host:
+
+Activate the venv:
+
+```shell
+cd ~/eiffel-ohpc/terraform_ohpc
+. ~/eiffel-ohpc/.venv/bin/activate
+```
+
+Deploy the instances using terraform:
+
+```shell
+cd ~/eiffel-ohpc/terraform_ohpc
+terraform init
+terraform apply
+```
+
+Configure them with ansible:
+
+```shell
+cd ~/eiffel-ohpc/
+ansible-playbook main.yml -i terraform_ohpc/ohpc_hosts
+```
+
+To delete the cluster:
+
+```shell
+cd ~/eiffel-ohpc/terraform_ohpc
+~/terraform destroy
+```
+
+To modify a cluster after changing its definition config just re-run the above terraform/ansible commands (the `init` command is only required once). If only the powersaving scripts have been modified these can be redeployed using:
+
+```shell
+cd ~/eiffel-ohpc/
+ansible-playbook scaling.yml -i terraform_ohpc/ohpc_hosts
+```
+
+## Logging into slurm nodes
+
+For the slurm control/login node just go through the ansible/tf control host first, e.g.:
+
+```shell
+ssh centos@93.186.40.108 # ansible/tf control host
+ssh centos@93.186.40.117 # ohpc-login
+```
+
+To login to compute nodes (e.g. for debugging) go from the ansible/tf control host but then proxy through the slurm head node, e.g.:
+
+```shell
+ssh centos@93.186.40.108 # ansible/tf control host
+ssh -o ProxyCommand="ssh centos@93.186.40.117 -W %h:%p" 10.0.0.143 # first IP ohpc-login, 2nd IP = ohpc-compute-N
+```
+
+## Restarting slurm control daemon
+If a clean restart is required to fix failed autoscaling, from the slurm control/login node use `top -u slurm -n 1` to find the slurmctld process, kill -9 it, then run `sudo /sbin/slurmctld -c`. The `-c` argument forces it to ignore any partition/job state files so all jobs will be lost.
+
+## Using a snapshot
+To significantly speed up build of compute nodes during autoscaling, create a snapshot of a running compute node and rebuild the cluster using that image:
+
+1. Create the cluster as above
+
+2. Log in to one of the compute nodes (see above)
+
+3. Run the following to anonymise the VM:
+
+   ```shell
+   sudo service slurmd stop
+   sudo systemctl disable slurmd
+   vi /etc/hosts # remove openhpc-* hosts, but leave localhost
+   sudo rm /etc/slurm/slurm.conf
+   sudo rm /var/log/slurm*
+   ```
+
+4. In the sausagecloud OpenStack GUI, pick "snapshot" on the above instance, and wait for it to finish saving (may require a refresh of the page).
+
+5. Modify the compute image in `terraform_ohpc/ohpc.tf` to use the above image - **NB** do not change the login image!
+
+6. Delete the cluster and recreate it following the instructions above.
