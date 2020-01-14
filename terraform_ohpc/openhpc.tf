@@ -82,5 +82,5 @@ EOT
 resource "local_file" "hosts" {
   content  = "${data.template_file.ohpc.rendered}"
   filename = "ohpc_hosts"
-  depends_on = [local.nodeset]
+  depends_on = [openstack_compute_instance_v2.compute]
 }
