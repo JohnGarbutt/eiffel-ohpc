@@ -2,3 +2,5 @@ terraform_ohpc/ohpc_hosts
 terraform_ohpc/terraform.tfstate
 terraform_ohpc/terraform.tfstate.backup
 slurmscripts/scale.py
+.venv/
+terraform_ohpc/.terraform/
