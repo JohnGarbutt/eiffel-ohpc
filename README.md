@@ -20,12 +20,11 @@ On [https://compute.sausage.cloud/](https://compute.sausage.cloud/):
 
 Connect to the ansible/tf control host over ssh then:
 - Upload clouds.yaml to ~/.config/openstack and in the `auth` section add a `password: <your openstack password>` pair.
-- Install wget, git, unzip, pip and virtualenv:
+- Install wget, git, unzip, pip (via epel) and virtualenv:
 
   ```shell
-  sudo yum install -y wget git unzip
-  curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-  sudo python get-pip.py
+  sudo yum install -y wget git unzip epel-release python-pip
+  sudo pip install -U pip # update pip
   sudo pip install virtualenv
   ```
 
