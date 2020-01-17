@@ -1,7 +1,5 @@
 - hosts: cluster_login
   become: yes
-  vars:
-    venv: '/home/centos/eiffel-ohpc/.venv/bin/activate'
   tasks:
     - name: setup an ssh key for (existing) slurm user
       user:
@@ -28,7 +26,7 @@
         dest: "{{ slurm_user.home }}/suspend.sh"
         owner: slurm
         mode: 0744
-    - name: create scale script on ansible/tf control host`
+    - name: create scale script on ansible/tf control host
       template:
         src: "{{ playbook_dir }}/slurmscripts/scale.j2"
         dest: "{{ playbook_dir }}/slurmscripts/scale.py"

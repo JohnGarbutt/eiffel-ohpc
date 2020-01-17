@@ -26,20 +26,20 @@
         marker: "# {mark} MANAGED BLOCK FOR OpenHPC proxy"
         path: "~/.ssh/known_hosts"
         
-- name: Wait for servers
-  hosts:
-  - cluster_login
-  - cluster_control
-  - cluster_batch
-  gather_facts: false
-  tasks:
-    - name: Wait for servers
-      wait_for:
-        host: "{{ ansible_host }}"
-        port: 22
-        state: started
-        timeout: 360
-      delegate_to: localhost
+# - name: Wait for servers
+#   hosts:
+#   - cluster_login
+#   - cluster_control
+#   - cluster_batch
+#   gather_facts: false
+#   tasks:
+#     - name: Wait for servers
+#       wait_for:
+#         host: "{{ ansible_host }}"
+#         port: 22
+#         state: started
+#         timeout: 360
+#       delegate_to: localhost
 
 - name: Configure server's keys
   hosts: localhost
