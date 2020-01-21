@@ -92,6 +92,7 @@ Connect to the ansible/tf control host over ssh then:
     - `min_nodes` matches `openhpc.tf`
     - `max_nodes` is the max number of nodes the cluster can have
     - `user` is appropriate
+    - `venv` is appropriate
 
 ## Creating a cluster
 
