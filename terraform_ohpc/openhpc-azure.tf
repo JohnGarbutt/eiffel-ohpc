@@ -238,3 +238,8 @@ resource "local_file" "hosts" {
   filename = "ohpc_hosts"
   depends_on = [azurerm_virtual_machine.compute]
 }
+
+output "ophc_login_public_ip" {
+  value = azurerm_public_ip.myterraformpublicip.ip_address
+  description = "Public IP for OpenHPC login node"
+}

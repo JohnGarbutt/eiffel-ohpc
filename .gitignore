@@ -4,5 +4,5 @@ terraform_ohpc/terraform.tfstate.backup
 slurmscripts/scale.py
 .venv/
 terraform_ohpc/.terraform/
-azcreds.sh
+azcreds.*
 *.pyc
