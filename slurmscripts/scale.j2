@@ -62,11 +62,10 @@ def main():
     elif mode == 'suspend':
         cluster_compute = sorted(set(existing_compute) - set(compute_changes))
     nodenames = ' '.join(cluster_compute)
-    print('cluster_compute ({mode}):'.format(mode=mode), cluster_compute)
+    print('cluster_compute:', cluster_compute)
 
     # create terraform '-target' arguments:
-    changes = sorted(set(compute_changes) - set(existing_compute)) # again, protect against cases where we ask for existing nodes
-    targets = ["-target='{COMPUTE_RESOURCE}.compute[\"{node}\"]'".format(COMPUTE_RESOURCE=COMPUTE_RESOURCE, node=node) for node in changes]
+    targets = ["-target='{COMPUTE_RESOURCE}.compute[\"{node}\"]'".format(COMPUTE_RESOURCE=COMPUTE_RESOURCE, node=node) for node in compute_changes]
     print('targets:', targets)
 
     # remove ohpc_hosts file to force regeneration:
