@@ -4,6 +4,9 @@
 
     Runs on ansible/tf control host as user "centos"
     Driven by suspend.sh/resume.sh run by SlurmUser on slurm control host (ohpc-login)
+
+    Can run manually as e.g.:
+        scale.py suspend|resume ohpc-compute-2 ohpc-compute-5
 """
 
 from __future__ import print_function
@@ -49,7 +52,7 @@ def main():
     # load environment:
     shell_source(os.path.expanduser(VENV))
     
-    # get existing compute instances as a list:
+    # get list of existing compute instances:
     tf_state = "{TF_CMD} state list {COMPUTE_RESOURCE}.compute".format(TF_CMD=TF_CMD, COMPUTE_RESOURCE=COMPUTE_RESOURCE)
     output = subprocess.Popen(tf_state, stdout=subprocess.PIPE, shell=True, cwd=TF_DIR).communicate()[0]
     existing_compute = re.findall("ohpc-compute-[0-9]+", output)
@@ -61,13 +64,12 @@ def main():
         cluster_compute = sorted(set(existing_compute) | set(compute_changes))
     elif mode == 'suspend':
         cluster_compute = sorted(set(existing_compute) - set(compute_changes))
-    nodenames = ' '.join(cluster_compute)
-    print('cluster_compute:', cluster_compute)
+    print('target compute:', cluster_compute)
 
-    # create terraform '-target' arguments:
-    targets = ["-target='{COMPUTE_RESOURCE}.compute[\"{node}\"]'".format(COMPUTE_RESOURCE=COMPUTE_RESOURCE, node=node) for node in compute_changes]
-    print('targets:', targets)
-
+    # create terraform arguments:
+    target_args = ["-target='{COMPUTE_RESOURCE}.compute[\"{node}\"]'".format(COMPUTE_RESOURCE=COMPUTE_RESOURCE, node=node) for node in compute_changes]
+    nodenames_arg = '-var nodenames="{nodenames}"'.format(nodenames=' '.join(cluster_compute))
+    
     # remove ohpc_hosts file to force regeneration:
     call([TF_CMD, 'destroy', '-target=local_file.hosts', '-auto-approve'], cwd=TF_DIR)
 
@@ -75,29 +77,21 @@ def main():
     if mode == 'resume':
 
         # create instances:
-        tf_apply = [TF_CMD, 'apply', '-var nodenames="{nodenames}"'.format(nodenames=nodenames)] + targets + ['-auto-approve']
-        call(tf_apply, cwd=TF_DIR)
+        call([TF_CMD, 'apply', '-auto-approve', nodenames_arg] + target_args, cwd=TF_DIR)
         
         # regenerate hosts file:
-        tf_apply_hosts = [TF_CMD, 'apply', '-var nodenames="{nodenames}"'.format(nodenames=nodenames), '-target=local_file.hosts', '-auto-approve']
-        call(tf_apply_hosts, cwd=TF_DIR)
+        call([TF_CMD, 'apply', '-auto-approve', nodenames_arg, '-target=local_file.hosts'], cwd=TF_DIR)
         
         # run ansible to configure *all* hosts (due to using /etc/hosts):
-        ansible_main = [ANSIBLE_CMD, 'main.yml', '-i', 'terraform_ohpc/ohpc_hosts']
-        call(ansible_main, cwd=ANSIBLE_DIR)
+        call([ANSIBLE_CMD, 'main.yml', '-i', 'terraform_ohpc/ohpc_hosts'], cwd=ANSIBLE_DIR)
         
     elif mode == 'suspend':
 
         # delete instances:
-        tf_destroy = [TF_CMD, 'destroy', '-var nodenames="{nodenames}"'.format(nodenames=nodenames)] + targets + ['-auto-approve']
-        call(tf_destroy, cwd=TF_DIR)
+        call([TF_CMD, 'destroy', '-auto-approve', nodenames_arg] + target_args, cwd=TF_DIR)
         
         # regenerate hosts file:
-        tf_apply_hosts = [TF_CMD, 'apply', '-var nodenames="{nodenames}"'.format(nodenames=nodenames), '-target=local_file.hosts', '-auto-approve']
-        call(tf_apply_hosts, cwd=TF_DIR)
-        
-    else:
-        exit('ERROR: invalid mode {mode}'.format(mode=mode))
+        call([TF_CMD, 'apply', nodenames_arg, '-auto-approve', '-target=local_file.hosts'], cwd=TF_DIR)
     
     print('scale.py finished')
 
