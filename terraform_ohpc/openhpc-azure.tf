@@ -1,5 +1,4 @@
 # Notes:
-# - define azure credentials by sourcing azcreds.sh
 # - TODO: take ssh key from openstack or a pub key on this node
 
 # By default generates 0-$(min_node-1) compute, else use e.g.
@@ -8,7 +7,15 @@
 # Note compute instances are for_each members and have IDs like
 #	azurerm_virtual_machine.compute["ohpc-compute-3"]
 
+data "external" "creds" {
+    program = ["cat", "${path.module}/azcreds.json"]
+}
+
 provider "azurerm" {
+    subscription_id = data.external.creds.result["ARM_SUBSCRIPTION_ID"]
+    client_id = data.external.creds.result["ARM_CLIENT_ID"]
+    client_secret = data.external.creds.result["ARM_CLIENT_SECRET"]
+    tenant_id = data.external.creds.result["ARM_TENANT_ID"]
 }
 
 variable "min_nodes" {

@@ -5,9 +5,15 @@ https://github.com/stackhpc/ansible-role-openhpc
 
 The cluster has a combined slurm control/login node and multiple compute nodes, some of which may be added on demand as required to service the slurm queue.
 
-Code and instructions below are for [sausage cloud](https://compute.sausage.cloud/) but other OpenStack clouds will be similar.
+Code and instructions below are **PARTIALLY** updated for a cluster on Azure, using a sausage-cloud ansible/tf control host:
 
 ## Initial setup
+
+In the Azure cloudshell, create a service principal using:
+    ```shell
+    az ad sp create-for-rbac -n openhpc --sdk-auth
+    ```
+Make a note of the results this returns.
 
 On [https://compute.sausage.cloud/](https://compute.sausage.cloud/):
 
@@ -16,10 +22,8 @@ On [https://compute.sausage.cloud/](https://compute.sausage.cloud/):
   - The `gateway` network
   - A key pair from your local machine 
 - Associate a floating ip
-- From Project | API Access download a `clouds.yaml` file.
 
 Connect to the ansible/tf control host over ssh then:
-- Upload clouds.yaml to ~/.config/openstack and in the `auth` section add a `password: <your openstack password>` pair.
 - Install wget, git, unzip, pip (via epel) and virtualenv:
 
   ```shell
@@ -36,7 +40,7 @@ Connect to the ansible/tf control host over ssh then:
   cat /proc/sys/kernel/random/entropy_avail # should be > 200
   ```
 
-  Clone the eiffel repo and checkout the **sausage branch:
+- Clone the eiffel repo and checkout the **azure** branch:
 
   ```shell
   git clone https://github.com/stackhpc/eiffel-ohpc.git 
@@ -74,18 +78,25 @@ Connect to the ansible/tf control host over ssh then:
   git checkout eiffel-autoscale
   ```
 
-- Create a keypair on the ansible/tf control host using `ssh-keygen` and upload the public key to openstack through the sausage web GUI.
+- Create a keypair on the ansible/tf control host using `ssh-keygen`.
+
+- Create a credentials file in `/home/centos~/eiffel-azure/terraform_ohpc/azcreds.json` in the format:
+  ```shell
+  {
+  "ARM_SUBSCRIPTION_ID":"YOUR_VALUE",
+  "ARM_CLIENT_ID":"YOUR_VALUE",
+  "ARM_CLIENT_SECRET":"YOUR_VALUE",
+  "ARM_TENANT_ID":"YOUR_VALUE"
+  }
+  ```
+  using the results from the service principal creation command above.
 
 - Modify  `~/eiffel-ohpc/terraform_ohpc/openhpc.tf` so that:
 
     - `control_host` is the public IP for the ansible/terraform control host
     - `min_nodes` is the minimum number of nodes / number of persistent nodes you want
-    - In provider `"openstack":  cloud = "openstack"`
     - For compute and login nodes:
-        - The `key_pair` name is for the key pair created on the ansible/tf control host - **NB:** NOT the keypair used to login to the ansible/tf control host - agent forwarding will not work with this autoscaling setup
-        - Network name should be "gateway"
-        - `flavor_name` is "hotdog"
-        - Image names: "Centos 7.6"
+        - `key_data`is the contents of the ssh public key created on the ansible/tf control host - **NB:** NOT the keypair used to login to the ansible/tf control host - agent forwarding will not work with this autoscaling setup
 
 - Modify ` ~/eiffel-ohpc/create.py` so that:
 

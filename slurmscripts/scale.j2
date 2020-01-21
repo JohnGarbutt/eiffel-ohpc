@@ -12,7 +12,6 @@ import sys, subprocess, os, re
 TF_CMD = 'terraform'
 ANSIBLE_CMD = 'ansible-playbook'
 VENV = '{{ playbook_dir }}/.venv/bin/activate'
-AZCREDS = '{{ playbook_dir }}/azcreds.sh'
 TF_DIR = '{{ playbook_dir }}/terraform_ohpc'
 ANSIBLE_DIR = '{{ playbook_dir }}'
 
@@ -41,7 +40,6 @@ def main():
 
     # load environment
     shell_source(os.path.expanduser(VENV))
-    shell_source(os.path.expanduser(AZCREDS))
     
     # get existing compute instances as a list:
     tf_state = "{TF_CMD} state list azurerm_virtual_machine.compute".format(TF_CMD=TF_CMD)
