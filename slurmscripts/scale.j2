@@ -59,7 +59,7 @@ def main():
     print('existing compute:', existing_compute)
     
     # create new cluster instance list:
-    # NB using sets is safer than string operations as avoids e.g. adding existing node
+    # NB using sets is safer than string operations as avoids e.g. adding existing nodes
     if mode == 'resume':
         cluster_compute = sorted(set(existing_compute) | set(compute_changes))
     elif mode == 'suspend':
@@ -68,26 +68,21 @@ def main():
 
     # create terraform arguments:
     target_args = ["-target='{COMPUTE_RESOURCE}.compute[\"{node}\"]'".format(COMPUTE_RESOURCE=COMPUTE_RESOURCE, node=node) for node in compute_changes]
+    target_args += ["-target='local_file.hosts'"] # always recreate this, as IP addresses change
     nodenames_arg = '-var nodenames="{nodenames}"'.format(nodenames=' '.join(cluster_compute))
     
-    # remove ohpc_hosts file to force regeneration:
-    call([TF_CMD, 'destroy', '-target=local_file.hosts', '-auto-approve'], cwd=TF_DIR)
-
     # change instances
     if mode == 'resume':
 
-        # create instances:
+        # create instances and refresh ohpc_hosts file:
         call([TF_CMD, 'apply', '-auto-approve', nodenames_arg] + target_args, cwd=TF_DIR)
-        
-        # regenerate hosts file:
-        call([TF_CMD, 'apply', '-auto-approve', nodenames_arg, '-target=local_file.hosts'], cwd=TF_DIR)
-        
+                
         # run ansible to configure *all* hosts (due to using /etc/hosts):
         call([ANSIBLE_CMD, 'main.yml', '-i', 'terraform_ohpc/ohpc_hosts'], cwd=ANSIBLE_DIR)
         
     elif mode == 'suspend':
 
-        # delete instances:
+        # delete instances and ohpc_hosts file:
         call([TF_CMD, 'destroy', '-auto-approve', nodenames_arg] + target_args, cwd=TF_DIR)
         
         # regenerate hosts file:
