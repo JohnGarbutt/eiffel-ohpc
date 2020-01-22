@@ -1,5 +1,8 @@
 - hosts: cluster_login
   become: yes
+  vars:
+    venv: "{{ playbook_dir }}/.venv/bin/activate"
+    tf_compute_resource: "azurerm_virtual_machine"
   tasks:
     - name: setup an ssh key for (existing) slurm user
       user:
