@@ -79,12 +79,12 @@ EOT
       fip = "${openstack_networking_floatingip_v2.fip_1.address}"
 	  control_host = "${var.control_host}"
     }
+    depends_on = [openstack_compute_instance_v2.compute]
 }
 
 resource "local_file" "hosts" {
   content  = "${data.template_file.ohpc.rendered}"
   filename = "ohpc_hosts"
-  depends_on = [openstack_compute_instance_v2.compute]
 }
 
 output "ophc_login_public_ip" {
