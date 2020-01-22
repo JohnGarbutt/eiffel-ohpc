@@ -17,7 +17,7 @@ ANSIBLE_CMD = 'ansible-playbook'
 VENV = '{{ venv }}'
 TF_DIR = '{{ playbook_dir }}/terraform_ohpc'
 ANSIBLE_DIR = '{{ playbook_dir }}'
-COMPUTE_RESOURCE = 'openstack_compute_instance_v2'
+COMPUTE_RESOURCE = '{{ tf_compute_resource }}'
 
 def call(args, cwd):
     """ Run a command using shell=True in specified directory.
