@@ -10,7 +10,7 @@
 """
 
 from __future__ import print_function
-import sys, subprocess, os, re
+import sys, subprocess, os, re, datetime
 
 TF_CMD = 'terraform'
 ANSIBLE_CMD = 'ansible-playbook'
@@ -47,7 +47,7 @@ def main():
     if mode not in ('suspend', 'resume'):
         exit('Invalid mode argument {mode!r}'.format(mode=mode))
     compute_changes=sys.argv[2:] # e.g. ['ohpc-compute-2', 'ohpc-compute-19']
-    print('scale.py running in {mode} mode to change {compute_changes}'.format(mode=mode, compute_changes=compute_changes))
+    print('{timestamp}: scale.py running in {mode} mode to change {compute_changes}'.format(timestamp=datetime.datetime.now().isoformat(), mode=mode, compute_changes=compute_changes))
     
     # load environment:
     shell_source(os.path.expanduser(VENV))
@@ -88,7 +88,7 @@ def main():
         # regenerate hosts file:
         call([TF_CMD, 'apply', nodenames_arg, '-auto-approve', '-target=local_file.hosts'], cwd=TF_DIR)
     
-    print('scale.py finished')
+    print('{timestamp}: scale.py finished'.format(timestamp=datetime.datetime.now().isoformat()))
 
 if __name__ == '__main__':
     main()
