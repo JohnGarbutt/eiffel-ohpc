@@ -12,10 +12,10 @@ data "external" "creds" {
 }
 
 provider "azurerm" {
-    subscription_id = data.external.creds.result["ARM_SUBSCRIPTION_ID"]
-    client_id = data.external.creds.result["ARM_CLIENT_ID"]
-    client_secret = data.external.creds.result["ARM_CLIENT_SECRET"]
-    tenant_id = data.external.creds.result["ARM_TENANT_ID"]
+    subscription_id = data.external.creds.result["subscriptionId"]
+    client_id = data.external.creds.result["clientId"]
+    client_secret = data.external.creds.result["clientSecret"]
+    tenant_id = data.external.creds.result["tenantId"]
 }
 
 variable "min_nodes" {

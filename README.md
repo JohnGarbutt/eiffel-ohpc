@@ -10,10 +10,11 @@ Code and instructions below are **PARTIALLY** updated for a cluster on Azure, us
 ## Initial setup
 
 In the Azure cloudshell, create a service principal using:
+
     ```shell
     az ad sp create-for-rbac -n openhpc --sdk-auth
     ```
-Make a note of the results this returns.
+Save the output this returns.
 
 On [https://compute.sausage.cloud/](https://compute.sausage.cloud/):
 
@@ -80,16 +81,8 @@ Connect to the ansible/tf control host over ssh then:
 
 - Create a keypair on the ansible/tf control host using `ssh-keygen`.
 
-- Create a credentials file in `/home/centos~/eiffel-azure/terraform_ohpc/azcreds.json` in the format:
-  ```shell
-  {
-  "ARM_SUBSCRIPTION_ID":"YOUR_VALUE",
-  "ARM_CLIENT_ID":"YOUR_VALUE",
-  "ARM_CLIENT_SECRET":"YOUR_VALUE",
-  "ARM_TENANT_ID":"YOUR_VALUE"
-  }
-  ```
-  using the results from the service principal creation command above.
+- Create a file `/home/centos/eiffel-azure/terraform_ohpc/azcreds.json` containing the output from the azure service principal command above.
+  **IMPORTANT:** This file is sensitive as it contains your private authentication information for Azure.
 
 - Modify  `~/eiffel-ohpc/terraform_ohpc/openhpc.tf` so that:
 
