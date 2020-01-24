@@ -2,7 +2,8 @@
   become: yes
   vars:
     venv: "{{ playbook_dir }}/.venv/bin/activate"
-    tf_compute_resource: "openstack_compute_instance_v2"
+    tf_compute_resource: "openstack_compute_instance_v2" # terraform "resource type" of compute instances
+    tf_lock_timeout: 240 # number of seconds to retry terraform operations if state file locked
   tasks:
     - name: setup an ssh key for (existing) slurm user
       user:

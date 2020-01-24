@@ -17,7 +17,8 @@ ANSIBLE_CMD = 'ansible-playbook'
 VENV = '{{ venv }}'
 TF_DIR = '{{ playbook_dir }}/terraform_ohpc'
 ANSIBLE_DIR = '{{ playbook_dir }}'
-COMPUTE_RESOURCE = '{{ tf_compute_resource }}'
+COMPUTE_RESOURCE = '{{ tf_compute_resource }}' # terraform "resource type" of compute instances
+TF_LOCK_TIMEOUT = '{{ tf_lock_timeout }}' # number of seconds to retry terraform operations if state file locked
 
 def call(args, cwd):
     """ Run a command using shell=True in specified directory.
@@ -70,12 +71,13 @@ def main():
     target_args = ["-target='{COMPUTE_RESOURCE}.compute[\"{node}\"]'".format(COMPUTE_RESOURCE=COMPUTE_RESOURCE, node=node) for node in compute_changes]
     target_args += ["-target='local_file.hosts'"] # always recreate this, as IP addresses change
     nodenames_arg = '-var nodenames="{nodenames}"'.format(nodenames=' '.join(cluster_compute))
+    timeout_arg = '-lock-timeout={TF_LOCK_TIMEOUT}s'.format(TF_LOCK_TIMEOUT=TF_LOCK_TIMEOUT)
     
     # change instances
     if mode == 'resume':
 
         # create instances and refresh ohpc_hosts file:
-        call([TF_CMD, 'apply', '-auto-approve', nodenames_arg] + target_args, cwd=TF_DIR)
+        call([TF_CMD, 'apply', timeout_arg, '-auto-approve', nodenames_arg] + target_args, cwd=TF_DIR)
                 
         # run ansible to configure *all* hosts (due to using /etc/hosts):
         call([ANSIBLE_CMD, 'main.yml', '-i', 'terraform_ohpc/ohpc_hosts'], cwd=ANSIBLE_DIR)
@@ -83,10 +85,10 @@ def main():
     elif mode == 'suspend':
 
         # delete instances and ohpc_hosts file:
-        call([TF_CMD, 'destroy', '-auto-approve', nodenames_arg] + target_args, cwd=TF_DIR)
+        call([TF_CMD, 'destroy', timeout_arg, '-auto-approve', nodenames_arg] + target_args, cwd=TF_DIR)
         
         # regenerate hosts file:
-        call([TF_CMD, 'apply', nodenames_arg, '-auto-approve', '-target=local_file.hosts'], cwd=TF_DIR)
+        call([TF_CMD, 'apply', timeout_arg, '-auto-approve', nodenames_arg, '-target=local_file.hosts'], cwd=TF_DIR)
     
     print('{timestamp}: scale.py finished'.format(timestamp=datetime.datetime.now().isoformat()))
 
