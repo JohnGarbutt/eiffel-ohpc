@@ -47,7 +47,7 @@ resource "openstack_compute_instance_v2" "compute" {
 
 resource "openstack_compute_instance_v2" "login" {
   name            = "ohpc-login"
-  image_name      = "CentOS 7.6"
+  image_name      = "CentOS 7.7"
   flavor_name     = "hotdog"
   key_pair        = "centos-at-steveb-control"
   security_groups = ["default"]
