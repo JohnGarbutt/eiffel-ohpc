@@ -33,9 +33,9 @@ provider "openstack" {
 resource "openstack_compute_instance_v2" "compute" {
   for_each        = local.nodeset
   name            = each.key
-  image_name      = "openhpc-centos76"
-  # initial:  "CentOS 7.6"
-  # snapshot: "openhpc-centos76"
+  image_name      = "openhpc-centos77"
+  # initial:  "CentOS 7.7"
+  # snapshot: "openhpc-centos77"
   flavor_name     = "hotdog"
   key_pair        = "centos-at-steveb-control"
   security_groups = ["default"]
