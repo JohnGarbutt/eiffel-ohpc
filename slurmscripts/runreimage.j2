@@ -5,4 +5,4 @@ REIMAGESCRIPT={{ playbook_dir }}/slurmscripts/reimage.py
 echo "`date`: $0 $*"
 echo SLURM_JOB_NODELIST is $SLURM_JOB_NODELIST
 echo SLURMD_NODENAME is $SLURMD_NODENAME
-nohup ssh {{ ansible_user }}@{{ control_host }} -i /home/{{ ansible_user }}/.ssh/id_ssh_rsa_reimage -- $REIMAGESCRIPT $SLURMD_NODENAME
+nohup ssh {{ ansible_host_username }}@{{ control_host }} -i /home/{{ ansible_user }}/.ssh/id_ssh_rsa_reimage -- $REIMAGESCRIPT $SLURMD_NODENAME

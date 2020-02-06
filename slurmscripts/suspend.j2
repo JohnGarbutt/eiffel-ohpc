@@ -16,6 +16,6 @@ suspend_hosts=$(scontrol show hostnames $1 | tr '\n' ' ')
 echo "suspending instances $suspend_hosts"
 
 # call the script on the ansible/tf control host to remove these
-ssh {{ ansible_user }}@{{ control_host }} -- $SCALESCRIPT suspend $suspend_hosts
+ssh {{ ansible_host_username }}@{{ control_host }} -- $SCALESCRIPT suspend $suspend_hosts
 
 ) &>> $LOGFILE

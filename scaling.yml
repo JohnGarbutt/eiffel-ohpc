@@ -5,6 +5,13 @@
     tf_compute_resource: "openstack_compute_instance_v2" # terraform "resource type" of compute instances
     tf_lock_timeout: 240 # number of seconds to retry terraform operations if state file locked
   tasks:
+    - name: get deployment user name
+      become: false
+      local_action: command whoami
+      register: ansible_host_whoami
+    - set_fact: ansible_host_username="{{ansible_host_whoami.stdout_lines[0]}}"
+    - debug:
+        var: ansible_host_username
     - name: setup an ssh key for (existing) slurm user
       user:
         name: slurm
@@ -30,13 +37,6 @@
         dest: "{{ slurm_user.home }}/suspend.sh"
         owner: slurm
         mode: 0744
-    - name: create scale script on ansible/tf control host
-      template:
-        src: "{{ playbook_dir }}/slurmscripts/scale.j2"
-        dest: "{{ playbook_dir }}/slurmscripts/scale.py"
-        owner: centos
-        mode: 0744
-      delegate_to: localhost
     - name: Get ansible/tf control host's SSH key
       command: "ssh-keyscan -t rsa {{ control_host }}"
       register: control_host_keys
@@ -60,6 +60,12 @@
         state: present
         line: "{{ hostvars['ohpc-login']['slurm_key'] }}" # TODO: not sure this is the right way to ref this host??
         #regexp: "{{ hostvars['ohpc-login']['slurm_key'] }}"
+    - name: create scale script on ansible/tf control host
+      template:
+        src: "{{ playbook_dir }}/slurmscripts/scale.j2"
+        dest: "{{ playbook_dir }}/slurmscripts/scale.py"
+        #owner: "{{ ansible_user }}"
+        mode: 0744
         
 - hosts:
   - cluster_control

@@ -15,6 +15,6 @@ resume_hosts=$(scontrol show hostnames $1 | tr '\n' ' ')
 echo "resuming instances $resume_hosts"
 
 # call the script on the ansible/tf control host to add these
-ssh {{ ansible_user }}@{{ control_host }} -- $SCALESCRIPT resume $resume_hosts
+ssh {{ ansible_host_username }}@{{ control_host }} -- $SCALESCRIPT resume $resume_hosts
 
 ) &>> $LOGFILE
