@@ -12,18 +12,18 @@ Code and instructions below are for [vss](https://vss.cloud.private.cam.ac.uk/) 
 On [vss web dashboard]](https://vss.cloud.private.cam.ac.uk/), from Project / Compute / Access & Security / API Access download an OpenStack RC File **V3**. Upload that to ilab-gate.
 TODO: this will need fixing for automation.
 
-On `ilab-gate`:
-- Check you have a keypair at `~/.ssh/id_rsa[.pub]`
+On `ilab-gate`, create an ansible/terraform control host and associated infrastructure:
+- If you want to be able to log into the control host from elsewhere, copy the public keyfile you want to use to e.g. `~/.ssh/id_rsa_mykeypair.pub`
 - Clone this repo and checkout branch `vss`.
-- Now deploy a network, an ansible/terraform control host `eiffel-vss-ctl`, router and floating IP  using terraform:
+- Now deploy the ansible/terraform control host `eiffel-vss-ctl` and infrastructure using terraform:
 
   ```shell
-  source ~/vss-openrc-v3.sh
+  source ~/vss-openrc-v3.sh # will prompt for password
   cd /ilab-home/$USER/eiffel-ohpc/terraform_ctl
   terraform init
-  terraform apply
+  terraform apply -var ssh_key_file=~/.ssh/id_rsa_mykeypair # note no .pub
   ```
-- Log into ansible/terraform control host `eiffel-vss-ctl` using the IP it outputs as user `centos`.
+- From the machine with the private key for `mykeypair`, log into ansible/terraform control host `eiffel-vss-ctl` using the IP it outputs as user `centos`.
 
 On `eiffel-vss-ctl`:
 TODO: - Upload clouds.yaml to ~/.config/openstack and in the `auth` section add a `password: <your openstack password>` pair.
