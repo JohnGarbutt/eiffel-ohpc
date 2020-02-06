@@ -12,7 +12,7 @@ variable "min_nodes" {
 
 variable "control_host" {
   type = string
-  default = "128.232.226.32"
+  default = "128.232.226.22"
   description = "Public IP address for ansible/terraform control host"
 }
 
@@ -67,7 +67,7 @@ resource "openstack_compute_instance_v2" "login" {
 }
 
 resource "openstack_networking_floatingip_v2" "fip_1" {
-  pool = "internet"
+  pool = "CUDN-Internet"
 }
 
 resource "openstack_compute_floatingip_associate_v2" "fip_1" {

@@ -10,7 +10,6 @@ Code and instructions below are for [vss](https://vss.cloud.private.cam.ac.uk/) 
 ## Initial setup
 
 On [vss web dashboard]](https://vss.cloud.private.cam.ac.uk/), from Project / Compute / Access & Security / API Access download an OpenStack RC File **V3**. Upload that to ilab-gate.
-TODO: this will need fixing for automation.
 
 On `ilab-gate`, create an ansible/terraform control host and associated infrastructure:
 - If you want to be able to log into the control host from elsewhere, copy the public keyfile you want to use to e.g. `~/.ssh/id_rsa_mykeypair.pub`
@@ -25,8 +24,8 @@ On `ilab-gate`, create an ansible/terraform control host and associated infrastr
   ```
 - From the machine with the private key for `mykeypair`, log into ansible/terraform control host `eiffel-vss-ctl` using the IP it outputs as user `centos`.
 
-On `eiffel-vss-ctl`:
-TODO: - Upload clouds.yaml to ~/.config/openstack and in the `auth` section add a `password: <your openstack password>` pair.
+On the ansible/tf control host `eiffel-vss-ctl`:
+
 - Install wget, git, unzip, pip (via epel) and virtualenv:
 
   ```shell
@@ -52,6 +51,11 @@ TODO: - Upload clouds.yaml to ~/.config/openstack and in the `auth` section add 
   cd ~/eiffel-ohpc
   git checkout vss
   ```
+
+- Use the variables in the OpenStack RC file to create a [clouds.yaml](https://docs.openstack.org/openstacksdk/latest/user/config/configuration.html) file in `~/eiffel-ohpc/terraform_ohpc/`. The cloud name should be `vss` and you need to include a `password` entry with your openstack password.
+
+
+  At this point you can swap to viewing this README on the ansible/tf control host rather than ilab-gate :-).
 
 - Setup a virtualenv with the requirements:
 
@@ -97,14 +101,17 @@ TODO: - Upload clouds.yaml to ~/.config/openstack and in the `auth` section add 
     - `min_nodes` matches `openhpc.tf`
     - `max_nodes` is the max number of nodes the cluster can have
 
+- Add `172.24.44.2 vss.cloud.private.cam.ac.uk` to `/etc/hosts`. FIXME:
+
 ## Creating a cluster
 
 On the ansible/tf control host:
 
+Source the OpenStack RC file.
+
 Activate the venv:
 
 ```shell
-cd ~/eiffel-ohpc/terraform_ohpc
 . ~/eiffel-ohpc/.venv/bin/activate
 ```
 

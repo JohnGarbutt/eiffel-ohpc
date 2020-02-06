@@ -7,3 +7,4 @@ terraform_ohpc/.terraform/
 terraform_ctl/.terraform
 terraform_ctl/terraform.tfstate
 terraform_ctl/terraform.tfstate.backup
+clouds.yaml
