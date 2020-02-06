@@ -5,25 +5,33 @@ https://github.com/stackhpc/ansible-role-openhpc
 
 The cluster has a combined slurm control/login node and multiple compute nodes, some of which may be added on demand as required to service the slurm queue.
 
-Code and instructions below are for [sausage cloud](https://compute.sausage.cloud/) but other OpenStack clouds will be similar.
+Code and instructions below are for [vss](https://vss.cloud.private.cam.ac.uk/) but other OpenStack clouds will be similar.
 
 ## Initial setup
 
-On [https://compute.sausage.cloud/](https://compute.sausage.cloud/):
+On [vss web dashboard]](https://vss.cloud.private.cam.ac.uk/), from Project / Compute / Access & Security / API Access download an OpenStack RC File **V3**. Upload that to ilab-gate.
+TODO: this will need fixing for automation.
 
-- Create the ansible/tf control host using:
-  - Centos7.6 chipolata instance (smaller VMs are too small for the image)
-  - The `gateway` network
-  - A key pair from your local machine 
-- Associate a floating ip
-- From Project | API Access download a `clouds.yaml` file.
+On `ilab-gate`:
+- Check you have a keypair at `~/.ssh/id_rsa[.pub]`
+- Clone this repo and checkout branch `vss`.
+- Now deploy a network, an ansible/terraform control host `eiffel-vss-ctl`, router and floating IP  using terraform:
 
-Connect to the ansible/tf control host over ssh then:
-- Upload clouds.yaml to ~/.config/openstack and in the `auth` section add a `password: <your openstack password>` pair.
+  ```shell
+  source ~/vss-openrc-v3.sh
+  cd /ilab-home/$USER/eiffel-ohpc/terraform_ctl
+  terraform init
+  terraform apply
+  ```
+- Log into ansible/terraform control host `eiffel-vss-ctl` using the IP it outputs as user `centos`.
+
+On `eiffel-vss-ctl`:
+TODO: - Upload clouds.yaml to ~/.config/openstack and in the `auth` section add a `password: <your openstack password>` pair.
 - Install wget, git, unzip, pip (via epel) and virtualenv:
 
   ```shell
-  sudo yum install -y wget git unzip epel-release python-pip
+  sudo yum install -y wget git unzip epel-release
+  sudo yum install python-pip
   sudo pip install -U pip # update pip
   sudo pip install virtualenv
   ```
@@ -33,15 +41,16 @@ Connect to the ansible/tf control host over ssh then:
   ```shell
   sudo yum install -y rng-tools
   sudo systemctl start rngd
+  sleep 5 # wait for a bit for start ...
   cat /proc/sys/kernel/random/entropy_avail # should be > 200
   ```
 
-  Clone the eiffel repo and checkout the **sausage branch:
+  Clone the eiffel repo and checkout the **vss** branch:
 
   ```shell
   git clone https://github.com/stackhpc/eiffel-ohpc.git 
   cd ~/eiffel-ohpc
-  git checkout sausage
+  git checkout vss
   ```
 
 - Setup a virtualenv with the requirements:
