@@ -12,7 +12,7 @@ variable "min_nodes" {
 
 variable "control_host" {
   type = string
-  default = "93.186.40.108"
+  default = "128.232.226.32"
   description = "Public IP address for ansible/terraform control host"
 }
 
@@ -22,38 +22,47 @@ variable "nodenames" {
   description = "Space-separated list of compute node names - leave empty for only minimum nodes"
 }
 
+variable "keypair" {
+  type = string
+  default = "eiffel-vss-ctl"
+  description = "Name of keypair on the ansible/terraform control host"
+}
+
+variable "network" {
+  type = string
+  default = "net1"
+}
+
 locals {
   nodeset = var.nodenames != "" ? toset(split(" ", var.nodenames)) : toset([for s in range(var.min_nodes): "ohpc-compute-${s}"])
 }
 
 provider "openstack" {
-  cloud = "openstack"
+  cloud = "vss"
 }
 
 resource "openstack_compute_instance_v2" "compute" {
   for_each        = local.nodeset
   name            = each.key
-  image_name      = "openhpc-centos77"
-  # initial:  "CentOS 7.7"
-  # snapshot: "openhpc-centos77"
-  flavor_name     = "hotdog"
-  key_pair        = "centos-at-steveb-control"
+  image_name      = "CentOS-7-x86_64-GenericCloud-1907"
+  flavor_name     = "C1.vss.small"
+  key_pair        = var.keypair
   security_groups = ["default"]
   
   network {
-    name = "gateway"
+    name = var.network
   }
 }
 
 resource "openstack_compute_instance_v2" "login" {
   name            = "ohpc-login"
-  image_name      = "CentOS 7.7"
-  flavor_name     = "hotdog"
-  key_pair        = "centos-at-steveb-control"
+  image_name      = "CentOS-7-x86_64-GenericCloud-1907"
+  flavor_name     = "C1.vss.small"
+  key_pair        = var.keypair
   security_groups = ["default"]
   
   network {
-    name = "gateway"
+    name = var.network
   }
 }
 

@@ -89,19 +89,13 @@ TODO: - Upload clouds.yaml to ~/.config/openstack and in the `auth` section add 
 
     - `control_host` is the public IP for the ansible/terraform control host
     - `min_nodes` is the minimum number of nodes / number of persistent nodes you want
-    - In provider `"openstack":  cloud = "openstack"`
-    - For compute and login nodes:
-        - The `key_pair` name is for the key pair created on the ansible/tf control host - **NB:** NOT the keypair used to login to the ansible/tf control host - agent forwarding will not work with this autoscaling setup
-        - Network name should be "gateway"
-        - `flavor_name` is "hotdog"
-        - Image names: "Centos 7.6"
-
+    - `keypair` is the name of the keypair created on the ansible/tf control host - **NB:** NOT the keypair used to login 
+      to the ansible/tf control host - agent forwarding will not work with this autoscaling setup
+    
 - Modify ` ~/eiffel-ohpc/create.py` so that:
 
     - `min_nodes` matches `openhpc.tf`
     - `max_nodes` is the max number of nodes the cluster can have
-    - `user` is appropriate
-    - `venv` is appropriate
 
 ## Creating a cluster
 
