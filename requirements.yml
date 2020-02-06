@@ -4,3 +4,5 @@
   version: v0.4.0
 - src: singleplatform-eng.users
   version: v1.2.6
+- src: stackhpc.nfs
+  version: v19.6.1

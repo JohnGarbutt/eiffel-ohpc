@@ -1,0 +1,13 @@
+---
+- hosts:
+  - cluster_control
+  - cluster_batch
+  become: yes
+  roles:
+    - role: stackhpc.nfs
+      nfs_enable:
+        server: "{{ inventory_hostname in groups['cluster_control'] }}"
+        clients: "{{ inventory_hostname in groups['cluster_batch'] }}"
+      nfs_export: "/mnt/ohpc"
+      nfs_client_mnt_point : "/mnt/ohpc"
+      nfs_server: "{{ groups['cluster_control'][0] }}"
