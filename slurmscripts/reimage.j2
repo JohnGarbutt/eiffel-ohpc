@@ -17,7 +17,6 @@ TF_DIR = '{{ playbook_dir }}/terraform_ohpc'
 ANSIBLE_DIR = '{{ playbook_dir }}'
 COMPUTE_RESOURCE = '{{ tf_compute_resource }}' # terraform "resource type" of compute instances
 TF_LOCK_TIMEOUT = '{{ tf_lock_timeout }}' # number of seconds to retry terraform operations if state file locked
-LOG_FILE = '/var/tmp/reimage.log'
 
 def call(args, cwd):
     """ Run a command using shell=True in specified directory.
@@ -25,7 +24,7 @@ def call(args, cwd):
         Shell is required here as ansible/terraform aren't found otherwise.
     """
     cmd = ' '.join(args) # undocumented, but can only pass str to shell=True
-    logging.info('calling: {cmd} in {cwd}'.format(cmd=cmd, cwd=cwd))
+    print('calling: {cmd} in {cwd}'.format(cmd=cmd, cwd=cwd))
     try:
         subprocess.check_call(cmd, shell=True, cwd=cwd)
     except:
@@ -44,7 +43,7 @@ def shell_source(script):
 def main():
 
     compute_changes=[sys.argv[1]] # e.g. ['ohpc-compute-2']
-    logging.info('{timestamp}: reimage.py running to change {compute_changes}'.format(timestamp=datetime.datetime.now().isoformat(), compute_changes=compute_changes))
+    print('{timestamp}: reimage.py running to change {compute_changes}'.format(timestamp=datetime.datetime.now().isoformat(), compute_changes=compute_changes))
 
     # load environment:
     shell_source(os.path.expanduser(VENV))
@@ -53,7 +52,7 @@ def main():
     tf_state = "{TF_CMD} state list {COMPUTE_RESOURCE}.compute".format(TF_CMD=TF_CMD, COMPUTE_RESOURCE=COMPUTE_RESOURCE)
     output = subprocess.Popen(tf_state, stdout=subprocess.PIPE, shell=True, cwd=TF_DIR).communicate()[0]
     existing_compute = re.findall("ohpc-compute-[0-9]+", output)
-    logging.info('existing compute: {existing_compute}'.format(existing_compute=existing_compute))
+    print('existing compute: {existing_compute}'.format(existing_compute=existing_compute))
     
     # create terraform arguments:
     target_args = ["-target='{COMPUTE_RESOURCE}.compute[\"{node}\"]'".format(COMPUTE_RESOURCE=COMPUTE_RESOURCE, node=node) for node in compute_changes]
@@ -67,8 +66,7 @@ def main():
     # run ansible to configure *all* hosts (due to using /etc/hosts):
     call([ANSIBLE_CMD, 'main.yml', '-i', 'terraform_ohpc/ohpc_hosts'], cwd=ANSIBLE_DIR)
     
-    logging.info('{timestamp}: reimage.py finished'.format(timestamp=datetime.datetime.now().isoformat()))
+    print('{timestamp}: reimage.py finished'.format(timestamp=datetime.datetime.now().isoformat()))
 
 if __name__ == '__main__':
-    logging.basicConfig(filename=LOG_FILE,level=logging.INFO)
     main()
