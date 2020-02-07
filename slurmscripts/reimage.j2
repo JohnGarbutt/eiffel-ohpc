@@ -25,7 +25,7 @@ def call(args, cwd):
         Shell is required here as ansible/terraform aren't found otherwise.
     """
     cmd = ' '.join(args) # undocumented, but can only pass str to shell=True
-    logging.info('calling:', cmd, 'in', cwd)
+    logging.info('calling: {cmd} in {cwd}'.format(cmd=cmd, cwd=cwd))
     try:
         subprocess.check_call(cmd, shell=True, cwd=cwd)
     except:
@@ -53,7 +53,7 @@ def main():
     tf_state = "{TF_CMD} state list {COMPUTE_RESOURCE}.compute".format(TF_CMD=TF_CMD, COMPUTE_RESOURCE=COMPUTE_RESOURCE)
     output = subprocess.Popen(tf_state, stdout=subprocess.PIPE, shell=True, cwd=TF_DIR).communicate()[0]
     existing_compute = re.findall("ohpc-compute-[0-9]+", output)
-    logging.info('existing compute:', existing_compute)
+    logging.info('existing compute: {existing_compute}'.format(existing_compute=existing_compute))
     
     # create terraform arguments:
     target_args = ["-target='{COMPUTE_RESOURCE}.compute[\"{node}\"]'".format(COMPUTE_RESOURCE=COMPUTE_RESOURCE, node=node) for node in compute_changes]

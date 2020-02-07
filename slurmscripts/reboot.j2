@@ -1,0 +1,7 @@
+#!/usr/bin/bash
+REIMAGESCRIPT={{ playbook_dir }}/slurmscripts/reimage.py
+LOGFILE=/mnt/ohpc/slurmreboot.log
+echo "reimage of `hostname` by $USER at `date`" &>> $LOGFILE
+# TODO: 1st ansible_user should be ansible_host_username:
+# TODO: have to turn off key checking as we don't have a user to create known_hosts for
+nohup ssh -o StrictHostKeyChecking=no -i /home/{{ ansible_user }}/.ssh/id_ssh_rsa_reimage {{ ansible_user }}@{{ control_host }} -- $REIMAGESCRIPT `hostname` &>> $LOGFILE
