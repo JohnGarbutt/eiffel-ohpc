@@ -44,7 +44,7 @@ provider "openstack" {
 resource "openstack_compute_instance_v2" "compute" {
   for_each        = local.nodeset
   name            = each.key
-  image_name      = "centos7-ohpc-v1"
+  image_name      = "CentOS-7-x86_64-GenericCloud-1907"
   # base: "CentOS-7-x86_64-GenericCloud-1907"
   # snapshot: "centos7-ohpc-v1"
   flavor_name     = "C1.vss.small"
