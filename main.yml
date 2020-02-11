@@ -3,3 +3,4 @@
 #- import_playbook: users.yml
 - import_playbook: nfs.yml
 - import_playbook: scaling.yml
+- import_playbook: reimage.yml

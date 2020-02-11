@@ -1,5 +1,4 @@
-#This only DEPLOYS the reimaging tools. To use them:
-#  TODO:
+# This only DEPLOYS the reimaging tools. To use them see the README.
 
 - hosts:
   - localhost
