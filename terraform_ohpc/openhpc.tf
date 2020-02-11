@@ -73,12 +73,12 @@ resource "openstack_networking_floatingip_v2" "fip_1" {
 }
 
 resource "openstack_compute_floatingip_associate_v2" "fip_1" {
-  floating_ip = "${openstack_networking_floatingip_v2.fip_1.address}"
-  instance_id = "${openstack_compute_instance_v2.login.id}"
+  floating_ip = openstack_networking_floatingip_v2.fip_1.address
+  instance_id = openstack_compute_instance_v2.login.id
 }
 
 data  "template_file" "ohpc" {
-    template = "${file("./template/ohpc.tpl")}"
+    template = file("./template/ohpc.tpl")
     vars = {
       login = <<EOT
 ${openstack_compute_instance_v2.login.name} ansible_host=${openstack_compute_instance_v2.login.network[0].fixed_ip_v4}
@@ -94,7 +94,7 @@ EOT
 }
 
 resource "local_file" "hosts" {
-  content  = "${data.template_file.ohpc.rendered}"
+  content  = data.template_file.ohpc.rendered
   filename = "ohpc_hosts"
 }
 
