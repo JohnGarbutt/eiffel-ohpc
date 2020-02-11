@@ -161,7 +161,7 @@ ssh -o ProxyCommand="ssh centos@93.186.40.117 -W %h:%p" 10.0.0.143 # first IP oh
 ```
 
 ## Restarting slurm control daemon
-If a clean restart is required to fix failed autoscaling, from the slurm control/login node use `top -u slurm -n 1` to find the slurmctld process, kill -9 it, then run `sudo /sbin/slurmctld -c`. The `-c` argument forces it to ignore any partition/job state files so all jobs will be lost.
+If a clean restart is required to fix failed autoscaling, from the slurm control/login node run `sudo scontrol slurmctld stop`, check its stopped using `top -u slurm -n 1`, then run `sudo /sbin/slurmctld -c`. The `-c` argument forces it to ignore any partition/job state files so all jobs will be lost.
 
 ## Using a snapshot
 To significantly speed up build of compute nodes during autoscaling, create a snapshot of a running compute node and rebuild the cluster using that image:
@@ -174,14 +174,23 @@ To significantly speed up build of compute nodes during autoscaling, create a sn
 
    ```shell
    sudo service slurmd stop
-   sudo systemctl disable slurmd
+   sudo systemctl disable slurmd # prevents it coming up on boot before storage etc ready
    vi /etc/hosts # remove openhpc-* hosts, but leave localhost
-   sudo rm /etc/slurm/slurm.conf
+   sudo rm -rf /etc/slurm/*
    sudo rm /var/log/slurm*
+   sudo rm /etc/munge/munge.key
    ```
 
 4. In the sausagecloud OpenStack GUI, pick "snapshot" on the above instance, and wait for it to finish saving (may require a refresh of the page).
 
 5. Modify the compute image in `terraform_ohpc/ohpc.tf` to use the above image - **NB** do not change the login image!
 
-6. Delete the cluster and recreate it following the instructions above.
+6. Delete the cluster and recreate it following the instructions above OR reimage the node(s) as below.
+
+
+## Reimaging
+
+1. Prepare the new image.
+2. Update the compute image name in `terraform_ohpc/openhpc.tf`.
+3. From the slurm login node run something like:
+    `sudo scontrol reboot ASAP ohpc-compute-[0-2]`
