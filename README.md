@@ -175,8 +175,8 @@ To significantly speed up build of compute nodes during autoscaling, create a sn
    ```shell
    sudo service slurmd stop
    sudo systemctl disable slurmd # prevents it coming up on boot before storage etc ready
-   vi /etc/hosts # remove openhpc-* hosts, but leave localhost
-   sudo rm -rf /etc/slurm/*
+   sudo vi /etc/hosts # remove openhpc-* hosts, but leave localhost
+   sudo rm /etc/slurm/{slurm.conf,reboot.sh} # do NOT delete /etc/slurm/* as need epilog
    sudo rm /var/log/slurm*
    sudo rm /etc/munge/munge.key
    ```
