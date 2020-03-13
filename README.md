@@ -9,10 +9,10 @@ Code and instructions below are for [vss](https://vss.cloud.private.cam.ac.uk/) 
 
 ## Initial setup
 
-On [vss web dashboard]](https://vss.cloud.private.cam.ac.uk/), from Project / Compute / Access & Security / API Access download an OpenStack RC File **V3**. Upload that to ilab-gate.
+On [vss web dashboard](https://vss.cloud.private.cam.ac.uk/), from Project / Compute / Access & Security / API Access download an OpenStack RC File **V3**. Upload that to ilab-gate.
 TODO: this will need fixing for automation.
 
-On `ilab-gate`, create an ansible/terraform control host and associated infrastructure:
+On `ilab-gate`, create an ansible/terraform control host `eiffel-vss-ctl` and associated infrastructure:
 - If you want to be able to log into the control host from elsewhere, copy the public keyfile you want to use to e.g. `~/.ssh/id_rsa_mykeypair.pub`
 - Clone this repo and checkout branch `vss`.
 - Now deploy the ansible/terraform control host `eiffel-vss-ctl` and infrastructure using terraform:
@@ -26,12 +26,14 @@ On `ilab-gate`, create an ansible/terraform control host and associated infrastr
 - From the machine with the private key for `mykeypair`, log into ansible/terraform control host `eiffel-vss-ctl` using the IP it outputs as user `centos`.
 
 On `eiffel-vss-ctl`:
+Upload the openstack RC file V3 to TODO: ??? and add your password at `export OS_PASSWORD`, deleting the prompt for this.
+
 TODO: - Upload clouds.yaml to ~/.config/openstack and in the `auth` section add a `password: <your openstack password>` pair.
 - Install wget, git, unzip, pip (via epel) and virtualenv:
 
   ```shell
   sudo yum install -y wget git unzip epel-release
-  sudo yum install python-pip
+  sudo yum install -y python-pip
   sudo pip install -U pip # update pip
   sudo pip install virtualenv
   ```
@@ -85,9 +87,9 @@ TODO: - Upload clouds.yaml to ~/.config/openstack and in the `auth` section add 
 
 - Create a keypair on the ansible/tf control host using `ssh-keygen` and upload the public key to openstack through the sausage web GUI.
 
-- Modify  `~/eiffel-ohpc/terraform_ohpc/openhpc.tf` so that:
+- If required, modify  `~/eiffel-ohpc/terraform_ohpc/openhpc.tf` so that:
 
-    - `control_host` is the public IP for the ansible/terraform control host
+    - `control_host` is the public IP for the ansible/terraform control host `eiffel-vss-ctl`
     - `min_nodes` is the minimum number of nodes / number of persistent nodes you want
     - `keypair` is the name of the keypair created on the ansible/tf control host - **NB:** NOT the keypair used to login 
       to the ansible/tf control host - agent forwarding will not work with this autoscaling setup
