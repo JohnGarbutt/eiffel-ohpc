@@ -27,7 +27,7 @@ locals {
 }
 
 provider "openstack" {
-  cloud = "openstack"
+  cloud = "alaska"
 }
 
 resource "openstack_compute_instance_v2" "compute" {
