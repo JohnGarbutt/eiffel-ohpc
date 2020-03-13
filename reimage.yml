@@ -12,13 +12,18 @@
       key: "{{ lookup('file', '/home/{{ ansible_user }}/.ssh/id_ssh_rsa_reimage.pub') }}"
   - name: Create ansible/tf control host reimage script
     template:
-        src: "{{ playbook_dir }}/slurmscripts/reimage.j2"
-        dest: "{{ playbook_dir }}/slurmscripts/reimage.py"
+        src: "{{ playbook_dir }}/slurmscripts/reconfigure.j2"
+        dest: "{{ playbook_dir }}/slurmscripts/reconfigure.py"
         owner: centos
         mode: 0744
 
 - hosts: cluster_batch
   tasks:
+    - name: get deployment user name
+      become: false
+      local_action: command whoami
+      register: ansible_host_whoami
+    - set_fact: ansible_host_username="{{ansible_host_whoami.stdout_lines[0]}}"
     - name: Copy private key to compute nodes
       copy:
         src: "/home/{{ ansible_user }}/.ssh/id_ssh_rsa_reimage"

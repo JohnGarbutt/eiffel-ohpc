@@ -56,11 +56,10 @@
         state: present
         line: "{{ hostvars['ohpc-login']['slurm_key'] }}" # TODO: not sure this is the right way to ref this host??
         #regexp: "{{ hostvars['ohpc-login']['slurm_key'] }}"
-    - name: create scale script on ansible/tf control host
+    - name: create reconfigure script on ansible/tf control host
       template:
-        src: "{{ playbook_dir }}/slurmscripts/scale.j2"
-        dest: "{{ playbook_dir }}/slurmscripts/scale.py"
-        #owner: "{{ ansible_user }}"
+        src: "{{ playbook_dir }}/slurmscripts/reconfigure.j2"
+        dest: "{{ playbook_dir }}/slurmscripts/reconfigure.py"
         mode: 0744
         
 - hosts:

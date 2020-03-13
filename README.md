@@ -172,9 +172,12 @@ ssh -o ProxyCommand="ssh centos@<ohpc-login IP> -W %h:%p" <ohpc-compute-N IP>
 
 ## Restarting slurm control daemon
 If slurm gets confused about node/job state e.g. during autoscaling development, from the slurm control/login node:
-- run `sudo scontrol slurmctld stop`
-- check its stopped using `top -u slurm -n 1`
-- then run `sudo /sbin/slurmctld -c` - the  argument forces it to ignore any partition/job state files so all jobs will be lost.
+
+```shell
+sudo service slurmctld stop # stop daemon
+top -u slurm -n 1 # check it's stopped
+sudo /sbin/slurmctld -c` # -c forces it to ignore any partition/job state files - all jobs will be lost
+```
 
 ## Using a snapshot
 To significantly speed up build of compute nodes during autoscaling, create a snapshot of a running compute node and rebuild the cluster using that image:
@@ -264,6 +267,17 @@ Additional details of slurm's functionality, including configuration parameters 
     `sudo scontrol reboot ASAP ohpc-compute-[0-2]`
 
 TODO: describe how this works
+
+## Image pipeline decisions
+All nodes only require a "plain" centos image - ansible will install all necessary packages and set all necessary configuration on this. However as discussed above a snapshot image may be useful to signficantly
+speed up creation of new nodes.
+
+In production, it may be considered desirable to prebuild images in a separate pipeline e.g. to allow off-line testing. This would allow (but not require) potentially nearly all of the ansible to be removed. It is suggested that at a minimum the ansible would need to:
+- template out /etc/slurm/slurm.conf (`stackhpc.openhpc` role)
+- copy ssh keys (scaling.yml, reimage.yml) - if the current ssh + scripts approach is used for rescaling/reimage
+- start slurm daemons (`stackhpc.openhpc` role)
+
+Note that it is assumed that a production cluster would have DNS hence the templating out of /etc/hosts (currently in the `stackhpc.openhpc` role) would not be required.
 
 ## Log locations
 

@@ -7,7 +7,7 @@
 LOGFILE=/var/tmp/slurmpwr.log # TODO: check this is writeable and find some way of erroring if not!!
 # TODO: check this is writeable and find some way of erroring if not!!
 (
-SCALESCRIPT={{ playbook_dir }}/slurmscripts/scale.py
+SCALESCRIPT={{ playbook_dir }}/slurmscripts/reconfigure.py
 echo "`date`: $0 $*"
 
 # expand hostlist - space-separated rather than one-per line:
