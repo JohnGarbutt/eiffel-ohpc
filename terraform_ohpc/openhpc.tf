@@ -12,7 +12,7 @@ variable "min_nodes" {
 
 variable "control_host" {
   type = string
-  default = "128.232.226.32"
+  default = "128.232.226.22"
   description = "Public IP address for ansible/terraform control host"
 }
 
