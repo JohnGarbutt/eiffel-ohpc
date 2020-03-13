@@ -44,7 +44,9 @@ provider "openstack" {
 resource "openstack_compute_instance_v2" "compute" {
   for_each        = local.nodeset
   name            = each.key
-  image_name      = "CentOS-7-x86_64-GenericCloud-1907"
+  image_name      = "centos7-ohpc-v2"
+  # base: "CentOS-7-x86_64-GenericCloud-1907"
+  # snapshot: "centos7-ohpc-v2"
   flavor_name     = "C1.vss.small"
   key_pair        = var.keypair
   security_groups = ["default"]
@@ -67,16 +69,16 @@ resource "openstack_compute_instance_v2" "login" {
 }
 
 resource "openstack_networking_floatingip_v2" "fip_1" {
-  pool = "internet"
+  pool = "CUDN-Internet"
 }
 
 resource "openstack_compute_floatingip_associate_v2" "fip_1" {
-  floating_ip = "${openstack_networking_floatingip_v2.fip_1.address}"
-  instance_id = "${openstack_compute_instance_v2.login.id}"
+  floating_ip = openstack_networking_floatingip_v2.fip_1.address
+  instance_id = openstack_compute_instance_v2.login.id
 }
 
 data  "template_file" "ohpc" {
-    template = "${file("./template/ohpc.tpl")}"
+    template = file("./template/ohpc.tpl")
     vars = {
       login = <<EOT
 ${openstack_compute_instance_v2.login.name} ansible_host=${openstack_compute_instance_v2.login.network[0].fixed_ip_v4}
@@ -92,7 +94,7 @@ EOT
 }
 
 resource "local_file" "hosts" {
-  content  = "${data.template_file.ohpc.rendered}"
+  content  = data.template_file.ohpc.rendered
   filename = "ohpc_hosts"
 }
 

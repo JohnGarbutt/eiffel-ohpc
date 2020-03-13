@@ -9,7 +9,7 @@ Code and instructions below are for [vss](https://vss.cloud.private.cam.ac.uk/) 
 
 ## Initial setup
 
-On [vss web dashboard](https://vss.cloud.private.cam.ac.uk/), from Project / Compute / Access & Security / API Access download an OpenStack RC File **V3**. Upload that to ilab-gate.
+On the [vss web dashboard](https://vss.cloud.private.cam.ac.uk/), from Project / Compute / Access & Security / API Access download an OpenStack RC File **V3**. Upload that to ilab-gate.
 TODO: this will need fixing for automation.
 
 On `ilab-gate`, create an ansible/terraform control host `eiffel-vss-ctl` and associated infrastructure:
@@ -25,10 +25,9 @@ On `ilab-gate`, create an ansible/terraform control host `eiffel-vss-ctl` and as
   ```
 - From the machine with the private key for `mykeypair`, log into ansible/terraform control host `eiffel-vss-ctl` using the IP it outputs as user `centos`.
 
-On `eiffel-vss-ctl`:
+On the ansible/tf control host `eiffel-vss-ctl`:
 Upload the openstack RC file V3 to TODO: ??? and add your password at `export OS_PASSWORD`, deleting the prompt for this.
 
-TODO: - Upload clouds.yaml to ~/.config/openstack and in the `auth` section add a `password: <your openstack password>` pair.
 - Install wget, git, unzip, pip (via epel) and virtualenv:
 
   ```shell
@@ -54,6 +53,11 @@ TODO: - Upload clouds.yaml to ~/.config/openstack and in the `auth` section add 
   cd ~/eiffel-ohpc
   git checkout vss
   ```
+
+- Use the variables in the OpenStack RC file to create a [clouds.yaml](https://docs.openstack.org/openstacksdk/latest/user/config/configuration.html) file in `~/eiffel-ohpc/terraform_ohpc/`. The cloud name should be `vss` and you need to include a `password` entry with your openstack password.
+
+
+  At this point you can swap to viewing this README on the ansible/tf control host rather than ilab-gate :-).
 
 - Setup a virtualenv with the requirements:
 
@@ -99,14 +103,17 @@ TODO: - Upload clouds.yaml to ~/.config/openstack and in the `auth` section add 
     - `min_nodes` matches `openhpc.tf`
     - `max_nodes` is the max number of nodes the cluster can have
 
+- Add `172.24.44.2 vss.cloud.private.cam.ac.uk` to `/etc/hosts`. FIXME:
+
 ## Creating a cluster
 
 On the ansible/tf control host:
 
+Source the OpenStack RC file.
+
 Activate the venv:
 
 ```shell
-cd ~/eiffel-ohpc/terraform_ohpc
 . ~/eiffel-ohpc/.venv/bin/activate
 ```
 
@@ -156,7 +163,7 @@ ssh -o ProxyCommand="ssh centos@93.186.40.117 -W %h:%p" 10.0.0.143 # first IP oh
 ```
 
 ## Restarting slurm control daemon
-If a clean restart is required to fix failed autoscaling, from the slurm control/login node use `top -u slurm -n 1` to find the slurmctld process, kill -9 it, then run `sudo /sbin/slurmctld -c`. The `-c` argument forces it to ignore any partition/job state files so all jobs will be lost.
+If a clean restart is required to fix failed autoscaling, from the slurm control/login node run `sudo scontrol slurmctld stop`, check its stopped using `top -u slurm -n 1`, then run `sudo /sbin/slurmctld -c`. The `-c` argument forces it to ignore any partition/job state files so all jobs will be lost.
 
 ## Using a snapshot
 To significantly speed up build of compute nodes during autoscaling, create a snapshot of a running compute node and rebuild the cluster using that image:
@@ -169,14 +176,23 @@ To significantly speed up build of compute nodes during autoscaling, create a sn
 
    ```shell
    sudo service slurmd stop
-   sudo systemctl disable slurmd
-   vi /etc/hosts # remove openhpc-* hosts, but leave localhost
-   sudo rm /etc/slurm/slurm.conf
+   sudo systemctl disable slurmd # prevents it coming up on boot before storage etc ready
+   sudo vi /etc/hosts # remove openhpc-* hosts, but leave localhost
+   sudo rm /etc/slurm/{slurm.conf,reboot.sh} # do NOT delete /etc/slurm/* as need epilog
    sudo rm /var/log/slurm*
+   sudo rm /etc/munge/munge.key
    ```
 
 4. In the sausagecloud OpenStack GUI, pick "snapshot" on the above instance, and wait for it to finish saving (may require a refresh of the page).
 
 5. Modify the compute image in `terraform_ohpc/ohpc.tf` to use the above image - **NB** do not change the login image!
 
-6. Delete the cluster and recreate it following the instructions above.
+6. Delete the cluster and recreate it following the instructions above OR reimage the node(s) as below.
+
+
+## Reimaging
+
+1. Prepare the new image.
+2. Update the compute image name in `terraform_ohpc/openhpc.tf`.
+3. From the slurm login node run something like:
+    `sudo scontrol reboot ASAP ohpc-compute-[0-2]`

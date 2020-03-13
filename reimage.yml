@@ -1,20 +1,7 @@
-- hosts:
-  - cluster_control
-  #- cluster_batch
-  tasks:
-    - name: Deploy slurm reimage job script
-      template:
-        src: "{{ playbook_dir }}/slurmscripts/runreimage.j2"
-        dest: "/home/{{ ansible_user }}/runreimage.sh"
-      # note this doesn't need to be on the compute node, or to be u+x, but as it's not in a shared dir
-      # we won't see output!
-  
+# This only DEPLOYS the reimaging tools. To use them see the README.
+
 - hosts:
   - localhost
-  vars:
-    venv: "{{ playbook_dir }}/.venv/bin/activate"
-    tf_compute_resource: "openstack_compute_instance_v2" # terraform "resource type" of compute instances
-    tf_lock_timeout: 240 # number of seconds to retry terraform operations if state file locked
   tasks:
   - name: Create a key
     openssh_keypair:
@@ -37,3 +24,10 @@
         src: "/home/{{ ansible_user }}/.ssh/id_ssh_rsa_reimage"
         dest: "/home/{{ ansible_user }}/.ssh/id_ssh_rsa_reimage"
         mode: "0400"
+    - name: Create reboot script on compute nodes
+      template:
+        src: slurmscripts/reboot.j2
+        dest: /etc/slurm/reboot.sh
+        owner: root
+        mode: u=rwx,g=rx,o=rx
+      become: yes
