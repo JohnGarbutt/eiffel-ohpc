@@ -1,19 +1,28 @@
 # eiffel-ohpc
 
-Example OpenHPC slurm cluster with autoscaling built on:
-https://github.com/stackhpc/ansible-role-openhpc
+[OpenHPC slurm cluster](https://github.com/stackhpc/ansible-role-openhpc) with additional features:
+- slurm-driven reimage
+- TODO: manual scaling 
+- autoscaling
 
-The cluster has a combined slurm control/login node and multiple compute nodes, some of which may be added on demand as required to service the slurm queue.
+The initial infrastructure creation process is as follows:
+
+```
+[ilab-gate] -> [ansible/terraform control host `eiffel-vss-ctl`] --> [slurm control/login node `ohpc-login`]
+                                                                  -> [slurm compute node `ohpc-compute-0`]
+                                                                  -> [slurm compute node `ohpc-compute-1`]
+```
+
+The slurm scheduler can create additional nodes to service the queue, up to a defined maximum number, by calling back to the ansible/terraform control host.
 
 Code and instructions below are for [vss](https://vss.cloud.private.cam.ac.uk/) but other OpenStack clouds will be similar.
 
-## Initial setup
+## Creating the ansible/terraform control host `eiffel-vss-ctl` and associated infrastructure
 
-On the [vss web dashboard](https://vss.cloud.private.cam.ac.uk/), from Project / Compute / Access & Security / API Access download an OpenStack RC File **V3**. Upload that to ilab-gate.
-TODO: this will need fixing for automation.
+From the [vss web dashboard](https://vss.cloud.private.cam.ac.uk/), from Project / Compute / Access & Security / API Access download an OpenStack RC File **V3**. Upload that to ilab-gate.
 
-On `ilab-gate`, create an ansible/terraform control host `eiffel-vss-ctl` and associated infrastructure:
-- If you want to be able to log into the control host from elsewhere, copy the public keyfile you want to use to e.g. `~/.ssh/id_rsa_mykeypair.pub`
+On `ilab-gate`:
+- If you want to be able to log into the control host from your local machine, copy the public keyfile you want to use onto `ilab-gate` , e.g. to `~/.ssh/id_rsa_mykeypair.pub`.
 - Clone this repo and checkout branch `vss`.
 - Now deploy the ansible/terraform control host `eiffel-vss-ctl` and infrastructure using terraform:
 
@@ -21,12 +30,11 @@ On `ilab-gate`, create an ansible/terraform control host `eiffel-vss-ctl` and as
   source ~/vss-openrc-v3.sh # will prompt for password
   cd /ilab-home/$USER/eiffel-ohpc/terraform_ctl
   terraform init
-  terraform apply -var ssh_key_file=~/.ssh/id_rsa_mykeypair # note no .pub
+  terraform apply -var ssh_key_file=~/.ssh/id_rsa_mykeypair # **NB** note no .pub extension
   ```
 - From the machine with the private key for `mykeypair`, log into ansible/terraform control host `eiffel-vss-ctl` using the IP it outputs as user `centos`.
 
 On the ansible/tf control host `eiffel-vss-ctl`:
-Upload the openstack RC file V3 to TODO: ??? and add your password at `export OS_PASSWORD`, deleting the prompt for this.
 
 - Install wget, git, unzip, pip (via epel) and virtualenv:
 
@@ -70,7 +78,7 @@ Upload the openstack RC file V3 to TODO: ??? and add your password at `export OS
   ansible-galaxy install -r requirements.yml # creates /home/centos/.ansible/roles/
   ```
 
-- Install terraform on $PATH (NB we need to be able to find this without a shell, so put it in /bin rather than adding it to ~/bin or modifying .bashrc etc):
+- Install terraform on $PATH (NB the autoscaling scripts need to be able to run this without a shell, so put it in /bin rather than adding it to ~/bin or modifying .bashrc etc):
 
   ```shell
   cd
@@ -105,11 +113,9 @@ Upload the openstack RC file V3 to TODO: ??? and add your password at `export OS
 
 - Add `172.24.44.2 vss.cloud.private.cam.ac.uk` to `/etc/hosts`. FIXME:
 
-## Creating a cluster
+## Creating the slurm cluster
 
 On the ansible/tf control host:
-
-Source the OpenStack RC file.
 
 Activate the venv:
 
@@ -148,22 +154,27 @@ ansible-playbook scaling.yml -i terraform_ohpc/ohpc_hosts
 
 ## Logging into slurm nodes
 
+Note that due to the way ssh keys are deployed in the above, all logins to cluster nodes have to go through the ansible/tf control host despite the slurm control node having a public IP. For production use this would be easy to change but it is convenient for development anyway as that is where the git repo is.
+
 For the slurm control/login node just go through the ansible/tf control host first, e.g.:
 
 ```shell
-ssh centos@93.186.40.108 # ansible/tf control host
-ssh centos@93.186.40.117 # ohpc-login
+ssh centos@<ansible/tf control host IP>
+ssh centos@<ohpc-login IP>
 ```
 
 To login to compute nodes (e.g. for debugging) go from the ansible/tf control host but then proxy through the slurm head node, e.g.:
 
 ```shell
-ssh centos@93.186.40.108 # ansible/tf control host
-ssh -o ProxyCommand="ssh centos@93.186.40.117 -W %h:%p" 10.0.0.143 # first IP ohpc-login, 2nd IP = ohpc-compute-N
+ssh centos@<ansible/tf control host IP>
+ssh -o ProxyCommand="ssh centos@<ohpc-login IP> -W %h:%p" <ohpc-compute-N IP>
 ```
 
 ## Restarting slurm control daemon
-If a clean restart is required to fix failed autoscaling, from the slurm control/login node run `sudo scontrol slurmctld stop`, check its stopped using `top -u slurm -n 1`, then run `sudo /sbin/slurmctld -c`. The `-c` argument forces it to ignore any partition/job state files so all jobs will be lost.
+If slurm gets confused about node/job state e.g. during autoscaling development, from the slurm control/login node:
+- run `sudo scontrol slurmctld stop`
+- check its stopped using `top -u slurm -n 1`
+- then run `sudo /sbin/slurmctld -c` - the  argument forces it to ignore any partition/job state files so all jobs will be lost.
 
 ## Using a snapshot
 To significantly speed up build of compute nodes during autoscaling, create a snapshot of a running compute node and rebuild the cluster using that image:
@@ -189,10 +200,60 @@ To significantly speed up build of compute nodes during autoscaling, create a sn
 
 6. Delete the cluster and recreate it following the instructions above OR reimage the node(s) as below.
 
+## Testing
+A basic MPI "hello world" program can be installed by loggin into the slurm control node and running:
+
+```shell
+sudo yum install -y git
+cd /mnt/ohpc
+sudo install -d centos -o centos
+cd centos
+git clone https://github.com/stackhpc/hpc-tests
+cd hpc-tests/helloworld/
+module load gnu7 openmpi3
+mpicc -o helloworld helloworld.c
+```
+
+To run e.g. on the 2 existing nodes (-N) with total of 2 processes (-n) run:
+
+```shell
+sbatch -N 2 -n 2 runhello
+```
+
+## Autoscaling
+If more than 2 nodes are required the cluster will autoscale up - this will take some time (especially if a snapshot image is not used), with the job showing as "Configuring/CF" state until ready. It will then autoscale down almost immediately (see under "AUTOSCALING" in `slurm.conf` for relevant timing parameters).
+
+The autoscaling machinery repurposes slurm's power management features to add/remove nodes as required. The 2 persistent compute nodes (i.e. below `min_nodes`) in the cluster are defined in `slurm.conf` and instantiated at cluster deployment as usual. Compute nodes between `min_nodes` and `max_nodes` are not instatiated when the cluster is deployed but are still defined the in `slurm.conf`, with "State=CLOUD". This is a slurm-defined state which tells slurm it contact these nodes initially. They will not appear in e.g. `sinfo` output until jobs have been scheduled on them. Note that slurm still assumes a 1:1 mapping between compute nodes and instances - all nodes must be defined in `slurm.conf`. This has some consequences which are discussed below.
+
+The autoscaling mechanism is that:
+- The slurm scheduler decides more nodes are needed and calls `/etc/slurm/resume.sh` (created from the template `eiffel-ohpc/slurmscripts/resume.j2`, configured by `slurm.conf:ResumeProgram`) on the slurm control node, as user `slurm` (`slurm.conf:SlurmUser`), with a "hostlist expression" defining the additional nodes required e.g. "ohpc-compute-[3-4,8]".
+- This uses `scontrol` to expand the hostlist expression into individual hosts, then ssh's back into the ansible/terraform control host and runs `eiffel-ohpc/slurmscripts/scale.py` (created from the template `<same>.j2`) as the user who deployed the cluster, passing it the list of new nodes required.
+- This essentially runs terraform to create instances and ansible to configure them, although there a few complications to this discussed below.
+- The last step of the ansible-driven configuration is to start the `slurmd` on each new node. This then contacts the `slurmctdl` on the slurm control node, which informs it that the node is ready, and the
+  job is started on the node.
+
+Once the scheduler has decided nodes are no longer required (again see autoscaling parameters) a similar process happens using `suspend.sh` on the slurm control node to run `scale.py` with a list of nodes to
+remove.
+
+TODO: describe wriggles wrt scale.py.
+
+For further details and configuration parameters needed in production see the slurm docs:
+- https://slurm.schedmd.com/elastic_computing.html
+- https://slurm.schedmd.com/power_save.html
 
 ## Reimaging
 
-1. Prepare the new image.
+1. Prepare the new image and upload to `vss`.
 2. Update the compute image name in `terraform_ohpc/openhpc.tf`.
 3. From the slurm login node run something like:
     `sudo scontrol reboot ASAP ohpc-compute-[0-2]`
+
+## Log locations
+
+- slurm control daemon - `ohpc-login`:/var/log/slurmctld.log
+- autoscaling - `ohpc-login`:/var/tmp/slurmpwr.log
+- reimaging - `eiffel-vss-ctl`:/var/tmp/reimage.log
+
+# Known Issues
+- Messages in autoscaling/reimaging logs from the different hosts involved don't appear in running order.
+- TODO: rescaling problem
