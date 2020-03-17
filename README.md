@@ -176,7 +176,7 @@ If slurm gets confused about node/job state e.g. during autoscaling development,
 ```shell
 sudo service slurmctld stop # stop daemon
 top -u slurm -n 1 # check it's stopped
-sudo /sbin/slurmctld -c` # -c forces it to ignore any partition/job state files - all jobs will be lost
+sudo /sbin/slurmctld -c # -c forces it to ignore any partition/job state files - all jobs will be lost
 ```
 
 ## Using a snapshot
