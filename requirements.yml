@@ -1,5 +1,3 @@
-- src: stackhpc.beegfs
-  version: v19.8.1
 - src: stackhpc.openhpc
   version: v0.4.0
 - src: singleplatform-eng.users

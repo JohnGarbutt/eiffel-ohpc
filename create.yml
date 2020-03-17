@@ -104,14 +104,6 @@
       yum:
         name: ["centos-release-scl", "epel-release"]
         state: present
-    - name: Update kernel # needed for beegfs role so {ansible_kernel} matches available packages - maybe should go in there?
-      yum:
-        name: kernel
-        state: latest
-      register: update_kernel
-    - name: reboot if there are updates
-      reboot:
-      when: update_kernel is changed
   roles:
     - role: stackhpc.openhpc
       openhpc_enable:
