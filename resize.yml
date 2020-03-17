@@ -1,0 +1,33 @@
+# Resize the cluster. Note this assumes there are no cloud nodes!
+
+- hosts: ohpc_login
+  gather_facts: false
+  vars:
+    openhpc_slurm_partitions: # TODO: pull this in from config
+        - name: "compute"
+          min_nodes: 0
+          max_nodes: 8
+          user: "centos"
+  tasks:
+      
+    - name: identify nodes to drain by comparing inventory against `min_nodes`
+      # NB will always drain last nodes in partition
+      set_fact:
+        to_drain: "{{ groups['ohpc_compute'][(item.min_nodes - groups['ohpc_compute'] | length):] if item.min_nodes < groups['ohpc_compute'] | length else []}}"
+      loop: "{{ openhpc_slurm_partitions }}"
+      # TODO: FIXME: for node name from var
+    - debug:
+        msg: "will drain nodes {{ ' '.join(to_drain) }}"
+      # TODO: FIXME: for multiple partitions?
+    - name: run openhpc role to drain nodes
+      debug: msg="TODO"
+    - name: return drained nodes to cloud
+      debug:
+        msg: "slurmscripts/reconfigure.py suspend {{ ' '.join(to_drain) }}"
+    - name: reconfigure cluster
+      debug: msg="TODO run main.yml"
+    - name: restart slurm daemons
+      debug: msg="TODO using scontrol shutdown && service {{slurm_service}} start"
+
+
+    
