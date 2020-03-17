@@ -23,7 +23,11 @@
       become: false
       local_action: command whoami
       register: ansible_host_whoami
+      run_once: true
+      changed_when: false
     - set_fact: ansible_host_username="{{ansible_host_whoami.stdout_lines[0]}}"
+      run_once: true
+      changed_when: false
     - name: Copy private key to compute nodes
       copy:
         src: "/home/{{ ansible_user }}/.ssh/id_ssh_rsa_reimage"

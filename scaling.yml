@@ -5,7 +5,9 @@
       become: false
       local_action: command whoami
       register: ansible_host_whoami
+      changed_when: false
     - set_fact: ansible_host_username="{{ansible_host_whoami.stdout_lines[0]}}"
+      changed_when: false
     - debug:
         var: ansible_host_username
     - name: setup an ssh key for (existing) slurm user

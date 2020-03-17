@@ -112,16 +112,10 @@
         runtime: true
       openhpc_slurm_service_enabled: true
       openhpc_slurm_control_host: "{{ groups['cluster_control'] | first }}"
-      openhpc_slurm_partitions:
-        - name: "compute"
-          min_nodes: 2
-          max_nodes: 8
-          user: "centos"
+      openhpc_slurm_partitions: "{{ ohpc_partitions }}"
       openhpc_cluster_name: ohpc
-      openhpc_packages:
-        - infiniband-diags
-        - gnu7-compilers-ohpc
-        - openmpi3-gnu7-ohpc
+      openhpc_packages: "{{ ohpc_packages }}"  # group_vars/all.yml
+        
 
 #- hosts:
 #  - cluster_login
