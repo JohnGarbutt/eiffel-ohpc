@@ -4,18 +4,6 @@
 # Note compute instances are for_each members and have IDs like
 #	openstack_compute_instance_v2.compute["ohpc-compute-3"]
 
-variable "min_nodes" {
-  type = number
-  default = 2
-  description = "The minimum number of compute nodes (= number of persistent compute nodes) in the cluster"
-}
-
-variable "control_host" {
-  type = string
-  default = "128.232.226.22"
-  description = "Public IP address for ansible/terraform control host"
-}
-
 variable "nodenames" {
   type = string
   default = ""
@@ -34,7 +22,9 @@ variable "network" {
 }
 
 locals {
-  nodeset = var.nodenames != "" ? toset(split(" ", var.nodenames)) : toset([for s in range(var.min_nodes): "ohpc-compute-${s}"])
+  min_nodes = yamldecode(file("../group_vars/all.yml"))["ohpc_partitions"][0]["min_nodes"]
+  nodeset = var.nodenames != "" ? toset(split(" ", var.nodenames)) : toset([for s in range(local.min_nodes): "ohpc-compute-${s}"])
+  control_host_ip = yamldecode(file("../group_vars/all.yml"))["control_host_ip"]
 }
 
 provider "openstack" {
@@ -88,7 +78,7 @@ EOT
 ${compute.name} ansible_host=${compute.network[0].fixed_ip_v4}%{ endfor }
 EOT
       fip = "${openstack_networking_floatingip_v2.fip_1.address}"
-	  control_host = "${var.control_host}"
+	  control_host = "${local.control_host_ip}"
     }
     depends_on = [openstack_compute_instance_v2.compute]
 }

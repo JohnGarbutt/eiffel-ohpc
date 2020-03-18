@@ -99,18 +99,15 @@ On the ansible/tf control host `eiffel-vss-ctl`:
 
 - Create a keypair on the ansible/tf control host using `ssh-keygen` and upload the public key to openstack through the sausage web GUI.
 
-- If required, modify  `~/eiffel-ohpc/terraform_ohpc/openhpc.tf` so that:
+- Modify `group_vars/all.yml` for:
+  - `min_nodes` is the minimum number of nodes / number of persistent nodes you want
+  - `max_nodes` is the max number of nodes the cluster can have
+  - `control_host_ip` is the public IP for the ansible/terraform control host `eiffel-vss-ctl` 
 
-    - `control_host` is the public IP for the ansible/terraform control host `eiffel-vss-ctl`
-    - `min_nodes` is the minimum number of nodes / number of persistent nodes you want
+- If required, modify  `~/eiffel-ohpc/terraform_ohpc/openhpc.tf` so that:
     - `keypair` is the name of the keypair created on the ansible/tf control host - **NB:** NOT the keypair used to login 
       to the ansible/tf control host - agent forwarding will not work with this autoscaling setup
     
-- Modify ` ~/eiffel-ohpc/create.py` so that:
-
-    - `min_nodes` matches `openhpc.tf`
-    - `max_nodes` is the max number of nodes the cluster can have
-
 - Add `172.24.44.2 vss.cloud.private.cam.ac.uk` to `/etc/hosts`. FIXME:
 
 ## Creating the slurm cluster
