@@ -6,7 +6,12 @@
     Driven by suspend.sh/resume.sh run by SlurmUser on slurm control node or by reboot.sh on slurm compute node.
 
     Can run manually as e.g.:
-        reconfigure.py MODE node1 [node2 ...]
+        reconfigure.py MODE NODE1 [NODE2 ...]
+    where NODEn are compute hostname(s) and MODE is one of
+        suspend: return specified "cloud" node(s) back to the cloud
+        resume: add new "cloud" node(s)
+        reboot: reapply (changed) terraform/ansible config to specified node(s) [TODO: rename]
+        delete: return specified normal nodes(s) back to the cloud
     where MODE is one of "suspend", "resume" or "reboot" and the nodes are compute node hostname(s).
 """
 
@@ -46,7 +51,7 @@ def shell_source(script):
 def main():
 
     mode=sys.argv[1]
-    if mode not in ('suspend', 'resume', 'reboot'):
+    if mode not in ('suspend', 'resume', 'reboot', 'delete'):
         exit('Invalid mode argument {mode!r}'.format(mode=mode))
     compute_changes=sys.argv[2:] # e.g. ['ohpc-compute-2', 'ohpc-compute-19']
     print('{timestamp}: reconfigure.py running in {mode} mode to change {compute_changes}'.format(timestamp=datetime.datetime.now().isoformat(), mode=mode, compute_changes=compute_changes))
@@ -64,10 +69,11 @@ def main():
     # NB using sets is safer than string operations as avoids e.g. adding existing nodes
     if mode == 'resume':
         cluster_compute = sorted(set(existing_compute) | set(compute_changes))
-    elif mode == 'suspend':
+    elif mode in ('suspend', 'delete'):
         cluster_compute = sorted(set(existing_compute) - set(compute_changes))
     elif mode == 'reboot':
         cluster_compute = existing_compute
+    
     print('desired compute nodes:', cluster_compute)
 
     # create terraform arguments:
@@ -82,7 +88,7 @@ def main():
         # create (resume) or rebuild (reboot) instances and refresh ohpc_hosts file:
         call([TF_CMD, 'apply', timeout_arg, '-auto-approve', nodenames_arg] + target_args, cwd=TF_DIR)
                 
-        # run ansible to configure *all* hosts (due to using /etc/hosts):
+        # run ansible to configure *all* hosts (revised /etc/hosts):
         call([ANSIBLE_CMD, 'main.yml', '-i', 'terraform_ohpc/ohpc_hosts'], cwd=ANSIBLE_DIR)
         
     elif mode == 'suspend':
@@ -92,6 +98,19 @@ def main():
         
         # regenerate hosts file:
         call([TF_CMD, 'apply', timeout_arg, '-auto-approve', nodenames_arg, '-target=local_file.hosts'], cwd=TF_DIR)
+
+        # NB can get away with not rerunning ansible as it doesn't matter if /etc/hosts is wrong
+    
+    elif mode == 'delete':
+        
+        # delete instances and ohpc_hosts file:
+        call([TF_CMD, 'destroy', timeout_arg, '-auto-approve', nodenames_arg] + target_args, cwd=TF_DIR)
+
+        # regenerate hosts file:
+        call([TF_CMD, 'apply', timeout_arg, '-auto-approve', nodenames_arg, '-target=local_file.hosts'], cwd=TF_DIR)
+
+        # run ansible to configure *all* hosts (revised /etc/hosts and slurm.conf):
+        call([ANSIBLE_CMD, 'main.yml', '-i', 'terraform_ohpc/ohpc_hosts'], cwd=ANSIBLE_DIR)
     
     print('{timestamp}: reconfigure.py finished'.format(timestamp=datetime.datetime.now().isoformat()))
 

@@ -1,7 +1,7 @@
 ohpc_partitions: # see ohpc role variable openhpc_slurm_partitions
 - name: "compute"
-  min_nodes: 1
-  max_nodes: 8
+  min_nodes: 2
+  max_nodes: 2
 control_host_ip: "128.232.226.22"
 venv: "{{ playbook_dir }}/.venv/bin/activate" # path to venv containing ansible binaries etc
 tf_compute_resource: "openstack_compute_instance_v2" # terraform "resource type" of compute instances

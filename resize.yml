@@ -1,33 +1,65 @@
 # Resize the cluster. Note this assumes there are no cloud nodes!
-
-- hosts: ohpc_login
+  
+- name: run openhpc role to drain nodes
   gather_facts: false
-  vars:
-    openhpc_slurm_partitions: # TODO: pull this in from config
-        - name: "compute"
-          min_nodes: 0
-          max_nodes: 8
-          user: "centos"
-  tasks:
-      
+  hosts:
+  - cluster_login
+  - cluster_control
+  - cluster_batch
+  become: false
+  #vars:
+  #  openhpc_repo_url: "https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm"
+  pre_tasks:    
     - name: identify nodes to drain by comparing inventory against `min_nodes`
       # NB will always drain last nodes in partition
       set_fact:
         to_drain: "{{ groups['ohpc_compute'][(item.min_nodes - groups['ohpc_compute'] | length):] if item.min_nodes < groups['ohpc_compute'] | length else []}}"
-      loop: "{{ openhpc_slurm_partitions }}"
-      # TODO: FIXME: for node name from var
+      loop: "{{ ohpc_partitions }}"
+      run_once: true # makes fact available on entire batch
     - debug:
         msg: "will drain nodes {{ ' '.join(to_drain) }}"
-      # TODO: FIXME: for multiple partitions?
+      run_once: true # makes fact available on entire batch
+  
+  roles:
     - name: run openhpc role to drain nodes
-      debug: msg="TODO"
-    - name: return drained nodes to cloud
-      debug:
-        msg: "slurmscripts/reconfigure.py suspend {{ ' '.join(to_drain) }}"
-    - name: reconfigure cluster
-      debug: msg="TODO run main.yml"
-    - name: restart slurm daemons
-      debug: msg="TODO using scontrol shutdown && service {{slurm_service}} start"
+      # this is a nop if adding nodes (i.e. nothing to drain)
+      role: stackhpc.openhpc
+      become: yes
+      openhpc_enable:
+        drain: "{{ inventory_hostname in to_drain }}"
+      #openhpc_slurm_control_host: "{{ groups['cluster_control'] | first }}"
+  
+  post_tasks:
 
+    # TODO: FIXME: also need to cope with ADDING nodes
+    - name: return nodes to cloud, rewrite inventory, slurm.conf and /etc/hosts
+      command: "slurmscripts/reconfigure.py delete {{ ' '.join(to_drain) }}"
+      # TODO: FIXME: templating for ansible gives NodeName=ohpc-compute-[0-0] with 1 node!
+      delegate_to: localhost
+      register: reconfigure
+      run_once: true
+    - debug:
+        var: reconfigure
+
+- name: restart slurm daemons
+  gather_facts: false
+  hosts:
+  - cluster_control
+  - cluster_batch
+  become: true
+  vars:
+    slurm_service:
+      cluster_control: slurmctld
+      cluster_batch: slurmd
+  tasks:
+    - meta: refresh_inventory # needed so we don't try to run on deleted nodes
+    - name: reconfigure slurm
+      command: "scontrol reconfigure"
+      run_once: true
+    - service:
+        name: "{{ slurm_service[item] }}"
+        state: restarted
+      loop: "{{ slurm_service.keys() }}"
+      when: "item in group_names"
 
     
