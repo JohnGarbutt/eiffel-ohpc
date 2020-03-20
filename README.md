@@ -5,7 +5,7 @@ An [OpenHPC slurm](https://github.com/stackhpc/ansible-role-openhpc) cluster wit
 - manual resizing of cluster
 - automatic resizing of cluster driven by slurm ("autoscaling")
 
-The cluster has an NFS share at `/mnt/ohpc` exported from the slurm control/login node.
+The cluster has an NFS share at `/mnt/ohpc` exported from the slurm control/login node and as configured here, a minimum of 2 and a maximum of 4 compute nodes.
 
 Code in this branch and the instructions below are for [vss](https://vss.cloud.private.cam.ac.uk/) but other OpenStack clouds will be similar.
 
