@@ -66,10 +66,6 @@
             cluster_batch: slurmd
         when: "item.key in group_names"
 
-      # - name: reconfigure slurm
-      #   command: "scontrol reconfigure"
-      #   run_once: true # expect slurmctld to die with stderr: slurm_reconfigure error: Zero Bytes were transmitted or received
-
       when: "hostvars['localhost']['to_add'] != [] or hostvars['localhost']['to_delete'] != []"
       become: true
     
