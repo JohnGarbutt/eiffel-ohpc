@@ -308,5 +308,5 @@ The above assumes that a production cluster would have DNS hence the templating 
 
 ## Known Issues & Rough Edges
 - Messages in the autoscaling/reimaging logs from scripts on different hosts don't appear in running order.
-- On the 2nd and subsequent autoscaling the slurmctld loses contact with one of the autoscaled nodes during the job completion step. See bug #4 although note that the job does run, produce output and eventually complete.
+- On the 2nd and subsequent autoscaling the slurmctld loses contact with one of the autoscaled nodes during the job completion step. See [issue #4](https://github.com/stackhpc/eiffel-ohpc/issues/4) although note that the job does run, produce output and eventually complete.
 - If the image isn't changed, then the "reboot" functionality doesn't actually perform a reboot which is confusing.
