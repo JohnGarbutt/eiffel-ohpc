@@ -247,7 +247,7 @@ To change the image used by compute nodes:
 1. Prepare the new image and upload to `vss`.
 2. Update the compute image name in `group_vars/all.yml`.
 3. From the slurm login node run something like:
-    `sudo scontrol reboot ASAP ohpc-compute-[0-10]`
+    `sudo scontrol reboot ASAP ohpc-compute-[0-1]`
 
 Nodes will be drained, then recreated with a new image.
 
@@ -306,6 +306,7 @@ The above assumes that a production cluster would have DNS hence the templating 
 - autoscaling - `ohpc-login`:/var/tmp/slurmpwr.log
 - reimaging - `eiffel-vss-ctl`:/var/tmp/reimage.log
 
-## Known Issues
+## Known Issues & Rough Edges
 - Messages in the autoscaling/reimaging logs from scripts on different hosts don't appear in running order.
 - On the 2nd and subsequent autoscaling the slurmctld loses contact with one of the autoscaled nodes during the job completion step. See bug #4 although note that the job does run, produce output and eventually complete.
+- If the image isn't changed, then the "reboot" functionality doesn't actually perform a reboot which is confusing.

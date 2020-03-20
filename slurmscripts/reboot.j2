@@ -5,4 +5,4 @@ REBOOTHOST=`hostname`
 echo "reimage of $REBOOTHOST by $USER at `date`" &>> $LOGFILE
 # TODO: 1st ansible_user should be ansible_host_username:
 # TODO: host key checking is turned off as we don't have a user to create known_hosts for - could be improved?
-ssh -o StrictHostKeyChecking=no -i /home/{{ ansible_host_username }}/.ssh/id_ssh_rsa_reimage {{ ansible_user }}@{{ control_host }} -- "$REIMAGESCRIPT $REBOOTHOST </dev/null >>$LOGFILE 2>&1 &"
+ssh -o StrictHostKeyChecking=no -i /home/{{ ansible_host_username }}/.ssh/id_ssh_rsa_reimage {{ ansible_user }}@{{ control_host }} -- "$REIMAGESCRIPT update $REBOOTHOST </dev/null >>$LOGFILE 2>&1 &"

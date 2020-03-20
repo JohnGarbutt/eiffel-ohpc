@@ -10,9 +10,8 @@
     where NODEn are compute hostname(s) and MODE is one of
         suspend: return specified "cloud" node(s) back to the cloud (doesn't rerun ansible)
         resume: add new "cloud" node(s) # TODO: change name to add
-        reboot: reapply (changed) terraform/ansible config to specified node(s) [TODO: rename]
+        update: reapply (changed) terraform config to specified node and ansible config to all
         delete: return specified normal nodes(s) back to the cloud (does rerun ansible)
-    where MODE is one of "suspend", "resume" or "reboot" and the nodes are compute node hostname(s).
 """
 
 from __future__ import print_function
@@ -51,7 +50,7 @@ def shell_source(script):
 def main():
 
     mode=sys.argv[1]
-    if mode not in ('suspend', 'resume', 'reboot', 'delete'):
+    if mode not in ('suspend', 'resume', 'update', 'delete'):
         exit('Invalid mode argument {mode!r}'.format(mode=mode))
     compute_changes=sys.argv[2:] # e.g. ['ohpc-compute-2', 'ohpc-compute-19']
     print('{timestamp}: reconfigure.py running in {mode} mode to change {compute_changes}'.format(timestamp=datetime.datetime.now().isoformat(), mode=mode, compute_changes=compute_changes))
@@ -71,7 +70,7 @@ def main():
         cluster_compute = sorted(set(existing_compute) | set(compute_changes))
     elif mode in ('suspend', 'delete'):
         cluster_compute = sorted(set(existing_compute) - set(compute_changes))
-    elif mode == 'reboot':
+    elif mode == 'update':
         cluster_compute = existing_compute
     
     print('desired compute nodes:', cluster_compute)
@@ -83,9 +82,9 @@ def main():
     timeout_arg = '-lock-timeout={TF_LOCK_TIMEOUT}s'.format(TF_LOCK_TIMEOUT=TF_LOCK_TIMEOUT)
     
     # change instances
-    if mode in ('resume', 'reboot'):
+    if mode in ('resume', 'update'):
 
-        # create (resume) or rebuild (reboot) instances and refresh ohpc_hosts file:
+        # create (resume) or rebuild (update) instances and refresh ohpc_hosts file:
         call([TF_CMD, 'apply', timeout_arg, '-auto-approve', nodenames_arg] + target_args, cwd=TF_DIR)
                 
         # run ansible to configure *all* hosts (revised /etc/hosts, and potentially slurm.conf):
