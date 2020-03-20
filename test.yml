@@ -1,0 +1,33 @@
+- hosts: ohpc-login
+  tasks:
+    - name: install git
+      package:
+        name: git
+        state: present
+      become: yes
+    - name: create test directory
+      file:
+        path: /mnt/ohpc/centos
+        owner: centos
+    - name: clone test repo
+      git:
+        repo: 'https://github.com/stackhpc/hpc-tests'
+        dest: /mnt/ohpc/centos/hpc-tests
+        accept_hostkey: yes
+    - name: build single test
+      shell:
+        cmd: "module load gnu7 openmpi3 && mpicc -o helloworld helloworld.c"
+        chdir:  /mnt/ohpc/centos/hpc-tests/helloworld/
+        creates: helloworld
+
+    - name: build continuous test
+      shell:
+        cmd: "module load gnu7 openmpi3 && mpicc -o helloworld-forever helloworld-forever.c"
+        chdir:  /mnt/ohpc/centos/hpc-tests/helloworld/
+        creates: helloworld-forever
+
+
+
+    
+    
+    
