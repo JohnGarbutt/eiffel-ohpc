@@ -257,13 +257,28 @@ Additional details of slurm's functionality, including configuration parameters 
 - https://slurm.schedmd.com/power_save.html
 
 ## Reimaging
+To change the image used by compute nodes:
 
 1. Prepare the new image and upload to `vss`.
 2. Update the compute image name in `terraform_ohpc/openhpc.tf`.
 3. From the slurm login node run something like:
-    `sudo scontrol reboot ASAP ohpc-compute-[0-2]`
+    `sudo scontrol reboot ASAP ohpc-compute-[0-10]`
 
-TODO: describe how this works
+Nodes will be drained, then recreated with a new image.
+
+TODO: describe how this works.
+
+## Manual size changes
+To manually change the size (number of persistent nodes) of the cluster:
+
+1. Change `min_nodes` in `group_vars/all.yml`
+2. Run `ansible-playbook -i terraform_ohpc/ohpc_hosts resize.yml`
+
+If scaling down, the appropriate number of nodes will be drained starting from the highest-numbered nodes. By default, it waits up to 1 day for the drain to complete.
+
+**NB: This currently only works for clusters with no cloud nodes and a single partition.**
+
+TODO: describe how this works.
 
 ## Image pipeline decisions
 All nodes only require a "plain" centos image - ansible will install all necessary packages and set all necessary configuration on this. However as discussed above a snapshot image may be useful to signficantly

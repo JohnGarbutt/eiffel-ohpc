@@ -5,6 +5,10 @@
   hosts: localhost
   gather_facts: false
   tasks:
+    - name: check there are no cloud nodes
+      fail:
+        msg: "Manual resizing only works on clusters with no cloud nodes"
+      when: "ohpc_partitions[0].max_nodes != ohpc_partitions[0].min_nodes"
     - name: identify nodes to delete by comparing inventory against `min_nodes` # NB always last nodes in partition
       set_fact:
         to_delete: "{{ groups['ohpc_compute'][(ohpc_partitions[0].min_nodes - groups['ohpc_compute'] | length):] if ohpc_partitions[0].min_nodes < groups['ohpc_compute'] | length else []}}"
@@ -26,11 +30,6 @@
   - cluster_control
   - cluster_batch
   - cluster_login
-  become: true
-  vars:
-    slurm_service:
-      cluster_control: slurmctld
-      cluster_batch: slurmd
   tasks:
     - block:
       - name: run openhpc role to drain nodes  # is actually be safe to run if no nodes need draining but looks odd
@@ -39,6 +38,7 @@
         vars:
           openhpc_enable:
             drain: "{{ inventory_hostname in hostvars['localhost']['to_delete'] }}"
+        become: true
       - name: return drained nodes to cloud and update inventory, slurm.conf and /etc/hosts
         command: "slurmscripts/reconfigure.py delete {{ ' '.join(hostvars['localhost']['to_delete']) }}"
         run_once: true
@@ -53,14 +53,31 @@
     
     - block:
       - meta: refresh_inventory # will have changed on disk
-    
-      - name: reconfigure slurm
-        command: "scontrol reconfigure"
+        run_once: true
+        
       - name: restart slurm daemons
         service:
-          name: "{{ slurm_service[item] }}"
+          name: "{{ item.value }}"
           state: restarted
-        loop: "{{ slurm_service.keys() }}"
-        when: "item in group_names"
-        when: "to_delete != [] or to_add != []"
+        loop: "{{ slurm_service | dict2items }}"
+        vars:
+          slurm_service:
+            cluster_control: slurmctld
+            cluster_batch: slurmd
+        when: "item.key in group_names"
+
+      # - name: reconfigure slurm
+      #   command: "scontrol reconfigure"
+      #   run_once: true # expect slurmctld to die with stderr: slurm_reconfigure error: Zero Bytes were transmitted or received
+
       when: "hostvars['localhost']['to_add'] != [] or hostvars['localhost']['to_delete'] != []"
+      become: true
+    
+    - debug:
+        msg: "{{ item }}"
+      loop:
+        - "{{ 'have delete node(s) ' + ' '.join(hostvars['localhost']['to_delete']) if hostvars['localhost']['to_delete'] != [] else ''}}" #
+        - "{{ 'have added node(s) ' + ' '.join(hostvars['localhost']['to_add']) if hostvars['localhost']['to_add'] != [] else '' }}"
+        - "{{ 'no nodes added/deleted' if (hostvars['localhost']['to_delete'] == [] and hostvars['localhost']['to_add'] == []) else ''}}"
+      when: "item != ''"
+
