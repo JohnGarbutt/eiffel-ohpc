@@ -1,57 +1,66 @@
 # Resize the cluster. Note this assumes there are no cloud nodes!
+# TODO: handle multiple partitions
 
-#- import_playbook: drain.yml # TODO: make this optional somehow
-
-- name: add/remove nodes
+- name: identify compute nodes to add/remove
   hosts: localhost
   gather_facts: false
   tasks:
-    - name: identify nodes to delete by comparing inventory against `min_nodes`
-      # NB will always to_delete last nodes in partition
+    - name: identify nodes to delete by comparing inventory against `min_nodes` # NB always last nodes in partition
       set_fact:
         to_delete: "{{ groups['ohpc_compute'][(ohpc_partitions[0].min_nodes - groups['ohpc_compute'] | length):] if ohpc_partitions[0].min_nodes < groups['ohpc_compute'] | length else []}}"
-      # TODO: handle multiple partitions
     - name: identify nodes to add by comparing inventory against `min_nodes`
       set_fact:
         to_add: "{{ range(ohpc_partitions[0].min_nodes) | map('regex_replace', '^(.*)$', 'ohpc-compute-\\1') | list | difference(groups['ohpc_compute']) }}"
-      # TODO: handle multiple partitions
-    - block:
-      - debug:
-          msg: "will delete node(s) {{ ' '.join(to_delete) }}"
-      # TODO: actually drain nodes!
-      - name: return drained nodes to cloud and update inventory, slurm.conf and /etc/hosts
-        command: "slurmscripts/reconfigure.py delete {{ ' '.join(to_drain) }}"
-      when: "to_delete != []"
-
-    - block:
-      - debug:
-          msg: "will add node(s) {{ ' '.join(to_add) }}"
-      - name: add instances
-        command: "slurmscripts/reconfigure.py resume {{ ' '.join(to_add) }}"
-      when: "to_add != []"
-
+      # TODO: handle multiple partitions in both the above
     - debug:
-        msg: "no nodes to be added/deleted"
-      when: "to_delete == [] and to_add == []"
-      # TODO: EXIT NOW!
+        msg: "{{ item }}"
+      loop:
+        - "{{ 'will delete node(s) ' + ' '.join(to_delete) if to_delete != [] else ''}}" #
+        - "{{ 'will add node(s) ' + ' '.join(to_add) if to_add != [] else '' }}"
+        - "{{ 'no nodes to be added/deleted' if (to_delete == [] and to_add == []) else ''}}"
+      when: "item != ''"
 
-- name: restart slurm daemons
+- name: make changes
   gather_facts: false
   hosts:
   - cluster_control
   - cluster_batch
+  - cluster_login
   become: true
   vars:
     slurm_service:
       cluster_control: slurmctld
       cluster_batch: slurmd
   tasks:
-    - meta: refresh_inventory # needed so we don't try to run on deleted nodes
-    - name: reconfigure slurm
-      command: "scontrol reconfigure"
+    - block:
+      - name: run openhpc role to drain nodes  # is actually be safe to run if no nodes need draining but looks odd
+        import_role:
+          role: stackhpc.openhpc
+        vars:
+          openhpc_enable:
+            drain: "{{ inventory_hostname in hostvars['localhost']['to_delete'] }}"
+      - name: return drained nodes to cloud and update inventory, slurm.conf and /etc/hosts
+        command: "slurmscripts/reconfigure.py delete {{ ' '.join(hostvars['localhost']['to_delete']) }}"
+        run_once: true
+        delegate_to: localhost
+      when: "hostvars['localhost']['to_delete'] != []"
+    
+    - name: add instances and update inventory, slurm.conf and /etc/hosts
+      command: "slurmscripts/reconfigure.py resume {{ ' '.join(hostvars['localhost']['to_add']) }}"
       run_once: true
-    - service:
-        name: "{{ slurm_service[item] }}"
-        state: restarted
-      loop: "{{ slurm_service.keys() }}"
-      when: "item in group_names"
+      delegate_to: localhost
+      when: "hostvars['localhost']['to_add'] != []"
+    
+    - block:
+      - meta: refresh_inventory # will have changed on disk
+    
+      - name: reconfigure slurm
+        command: "scontrol reconfigure"
+      - name: restart slurm daemons
+        service:
+          name: "{{ slurm_service[item] }}"
+          state: restarted
+        loop: "{{ slurm_service.keys() }}"
+        when: "item in group_names"
+        when: "to_delete != [] or to_add != []"
+      when: "hostvars['localhost']['to_add'] != [] or hostvars['localhost']['to_delete'] != []"

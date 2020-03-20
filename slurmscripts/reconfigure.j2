@@ -8,10 +8,10 @@
     Can run manually as e.g.:
         reconfigure.py MODE NODE1 [NODE2 ...]
     where NODEn are compute hostname(s) and MODE is one of
-        suspend: return specified "cloud" node(s) back to the cloud
-        resume: add new "cloud" node(s)
+        suspend: return specified "cloud" node(s) back to the cloud (doesn't rerun ansible)
+        resume: add new "cloud" node(s) # TODO: change name to add
         reboot: reapply (changed) terraform/ansible config to specified node(s) [TODO: rename]
-        delete: return specified normal nodes(s) back to the cloud
+        delete: return specified normal nodes(s) back to the cloud (does rerun ansible)
     where MODE is one of "suspend", "resume" or "reboot" and the nodes are compute node hostname(s).
 """
 
@@ -88,7 +88,7 @@ def main():
         # create (resume) or rebuild (reboot) instances and refresh ohpc_hosts file:
         call([TF_CMD, 'apply', timeout_arg, '-auto-approve', nodenames_arg] + target_args, cwd=TF_DIR)
                 
-        # run ansible to configure *all* hosts (revised /etc/hosts):
+        # run ansible to configure *all* hosts (revised /etc/hosts, and potentially slurm.conf):
         call([ANSIBLE_CMD, 'main.yml', '-i', 'terraform_ohpc/ohpc_hosts'], cwd=ANSIBLE_DIR)
         
     elif mode == 'suspend':
@@ -99,7 +99,7 @@ def main():
         # regenerate hosts file:
         call([TF_CMD, 'apply', timeout_arg, '-auto-approve', nodenames_arg, '-target=local_file.hosts'], cwd=TF_DIR)
 
-        # NB can get away with not rerunning ansible as it doesn't matter if /etc/hosts is wrong
+        # NB can get away with not rerunning ansible as it doesn't matter if /etc/hosts is wrong, and slurm.conf hasn't changed
     
     elif mode == 'delete':
         
