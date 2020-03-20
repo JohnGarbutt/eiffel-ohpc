@@ -1,28 +1,28 @@
 # eiffel-ohpc
 
-[OpenHPC slurm cluster](https://github.com/stackhpc/ansible-role-openhpc) with additional features:
-- slurm-driven reimage
-- TODO: manual scaling 
-- autoscaling
+An [OpenHPC slurm](https://github.com/stackhpc/ansible-role-openhpc) cluster with additional features:
+- slurm-controlled reimage of compute nodes
+- manual resizing of cluster
+- automatic resizing of cluster driven by slurm ("autoscaling")
+
+The cluster has an NFS share at `/mnt/ohpc` exported from the slurm control/login node.
+
+Code in this branch and the instructions below are for [vss](https://vss.cloud.private.cam.ac.uk/) but other OpenStack clouds will be similar.
 
 The initial infrastructure creation process is as follows:
 
 ```
-[ilab-gate] -> [ansible/terraform control host `eiffel-vss-ctl`] --> [slurm control/login node `ohpc-login`]
-                                                                  -> [slurm compute node `ohpc-compute-0`]
-                                                                  -> [slurm compute node `ohpc-compute-1`]
+[ilab-gate] -> [ansible/terraform control host 'eiffel-vss-ctl'] --> [slurm control/login node 'ohpc-login']
+                                                                  -> [slurm compute node 'ohpc-compute-0']
+                                                                  -> [slurm compute node 'ohpc-compute-1']
 ```
-
-The slurm scheduler can create additional nodes to service the queue, up to a defined maximum number, by calling back to the ansible/terraform control host.
-
-Code and instructions below are for [vss](https://vss.cloud.private.cam.ac.uk/) but other OpenStack clouds will be similar.
 
 ## Creating the ansible/terraform control host `eiffel-vss-ctl` and associated infrastructure
 
 From the [vss web dashboard](https://vss.cloud.private.cam.ac.uk/), from Project / Compute / Access & Security / API Access download an OpenStack RC File **V3**. Upload that to ilab-gate.
 
 On `ilab-gate`:
-- If you want to be able to log into the control host from your local machine, copy the public keyfile you want to use onto `ilab-gate` , e.g. to `~/.ssh/id_rsa_mykeypair.pub`.
+- If you want to be able to log into the ansible/terraform control host from your local machine, copy the public keyfile you want to use onto `ilab-gate` , e.g. to `~/.ssh/id_rsa_mykeypair.pub`.
 - Clone this repo and checkout branch `vss`.
 - Now deploy the ansible/terraform control host `eiffel-vss-ctl` and infrastructure using terraform:
 
@@ -32,7 +32,7 @@ On `ilab-gate`:
   terraform init
   terraform apply -var ssh_key_file=~/.ssh/id_rsa_mykeypair # **NB** note no .pub extension
   ```
-- From the machine with the private key for `mykeypair`, log into ansible/terraform control host `eiffel-vss-ctl` using the IP it outputs as user `centos`.
+- From the machine with the private key for `mykeypair`, log into the ansible/terraform control host `eiffel-vss-ctl` as user `centos`using the IP it outputs .
 
 On the ansible/tf control host `eiffel-vss-ctl`:
 
@@ -54,7 +54,7 @@ On the ansible/tf control host `eiffel-vss-ctl`:
   cat /proc/sys/kernel/random/entropy_avail # should be > 200
   ```
 
-  Clone the eiffel repo and checkout the **vss** branch:
+  Clone this repo and checkout the **vss** branch - this is the repo which will be used to build the actual cluster:
 
   ```shell
   git clone https://github.com/stackhpc/eiffel-ohpc.git 
@@ -108,7 +108,7 @@ On the ansible/tf control host `eiffel-vss-ctl`:
     - `keypair` is the name of the keypair created on the ansible/tf control host - **NB:** NOT the keypair used to login 
       to the ansible/tf control host - agent forwarding will not work with this autoscaling setup
     
-- Add `172.24.44.2 vss.cloud.private.cam.ac.uk` to `/etc/hosts`. FIXME:
+- Add `172.24.44.2 vss.cloud.private.cam.ac.uk` to `/etc/hosts`.
 
 ## Creating the slurm cluster
 
@@ -142,13 +142,6 @@ cd ~/eiffel-ohpc/terraform_ohpc
 ~/terraform destroy
 ```
 
-To modify a cluster after changing its definition config just re-run the above terraform/ansible commands (the `init` command is only required once). If only the powersaving scripts have been modified these can be redeployed using:
-
-```shell
-cd ~/eiffel-ohpc/
-ansible-playbook scaling.yml -i terraform_ohpc/ohpc_hosts
-```
-
 ## Logging into slurm nodes
 
 Note that due to the way ssh keys are deployed in the above, all logins to cluster nodes have to go through the ansible/tf control host despite the slurm control node having a public IP. For production use this would be easy to change but it is convenient for development anyway as that is where the git repo is.
@@ -168,7 +161,7 @@ ssh -o ProxyCommand="ssh centos@<ohpc-login IP> -W %h:%p" <ohpc-compute-N IP>
 ```
 
 ## Restarting slurm control daemon
-If slurm gets confused about node/job state e.g. during autoscaling development, from the slurm control/login node:
+If slurm gets confused about node/job state e.g. during development/debugging, from the slurm control/login node run:
 
 ```shell
 sudo service slurmctld stop # stop daemon
@@ -196,38 +189,26 @@ To significantly speed up build of compute nodes during autoscaling, create a sn
 
 4. In the sausagecloud OpenStack GUI, pick "snapshot" on the above instance, and wait for it to finish saving (may require a refresh of the page).
 
-5. Modify the compute image in `terraform_ohpc/ohpc.tf` to use the above image - **NB** do not change the login image!
+5. Modify the compute image in `terraform_ohpc/ohpc.tf` to use the above image.
 
 6. Delete the cluster and recreate it following the instructions above OR reimage the node(s) as below.
 
 ## Testing
 
-The cluster has an NFS-shared directory at /mnt/ohpc (exported from the slurm control/login node).
+Basic MPI "hello world" programs can be installed for testing by running:
 
-A basic MPI "hello world" program can be installed by logging into the slurm control node and running:
+    ansible-playbook -i terraform_ohpc/ohpc_hosts test.yml
 
-```shell
-sudo yum install -y git
-cd /mnt/ohpc
-sudo install -d centos -o centos
-cd centos
-git clone https://github.com/stackhpc/hpc-tests
-cd hpc-tests/helloworld/
-module load gnu7 openmpi3
-mpicc -o helloworld helloworld.c
-```
+This creates binaries `helloworld` and `helloworld-forever.c` in the NFS share at `/mnt/ohpc/centos/hpc-tests/helloworld`.
 
-To run e.g. on the 2 existing nodes (-N) with total of 2 processes (-n) run:
+To run this on 2 nodes (-N) with a total of 2 processes (-n) use e.g.:
 
-```shell
-sbatch -N 2 -n 2 runhello
-```
+    sbatch -N 2 -n 2 runhello
+
+The output in `slurm-*.out` should show reports from one process on each node.
 
 ## Autoscaling
-If `max_nodes` is more than `min_nodes` then if more nodes are required the cluster will autoscale up - this will take some
-time (~2-3 minutes with a snapshot image, ~8+ minutes with a plain centos immage), with the job showing as "Configuring/CF"
-state until ready. It will then autoscale down almost immediately (see under "AUTOSCALING" in `slurm.conf` for relevant
-timing parameters - values are currently set for testing and are not appropriate for production).
+If `group_vars/all.yml` has `max_nodes` > `min_nodes` the cluster can autoscale up if required to service the queue. This will take some time (~2-3 minutes with a snapshot image, ~8+ minutes with a plain centos image), with the job showing as "Configuring/CF" state until ready. It will then autoscale down almost immediately (see under "AUTOSCALING" in `slurm.conf` for relevant timing parameters - values are currently set for testing and are not appropriate for production).
 
 The autoscaling machinery repurposes slurm's power management features to add/remove nodes as required. The persistent
 compute nodes (i.e. below `min_nodes`) in the cluster are defined in `slurm.conf` and instantiated at cluster deployment as usual. Compute nodes between `min_nodes` and `max_nodes` are not instatiated when the cluster is deployed but are still defined the in `slurm.conf`, with "State=CLOUD". This is a slurm-defined state which tells slurm it cannot contact these nodes initially. They will not appear in e.g. `sinfo` output until jobs have been scheduled on them. Note that slurm still assumes a 1:1 mapping between compute nodes and instances, i.e. all nodes must be defined in `slurm.conf`. This has some consequences which are discussed below.
@@ -236,24 +217,25 @@ The autoscaling mechanism is that:
 - The slurm scheduler decides more nodes are needed and calls `/etc/slurm/resume.sh` (created from the template `eiffel-ohpc/slurmscripts/resume.j2`, configured by `slurm.conf:ResumeProgram`) on the slurm control node, as user `slurm` (`slurm.conf:SlurmUser`), with a "hostlist expression" defining the additional nodes required e.g. "ohpc-compute-[3-4,8]".
 - This uses `scontrol` to expand the hostlist expression into individual hosts, then ssh's back into the ansible/terraform control host and runs `eiffel-ohpc/slurmscripts/reconfigure.py` (created from the template `<same>.j2`) as the user who deployed the cluster, passing it the mode "resume" and the list of new nodes required.
 - This essentially runs terraform to create instances and ansible to configure them, although there a few complications to this discussed below.
-- The last step of the ansible-driven configuration is to start the `slurmd` on each new node. This then contacts the `slurmctdl` on the slurm control node, which informs it that the node is ready, and the
-  job is started on the node.
+- It then runs the same ansible used to deploy the cluster, with the last step of this being to start the `slurmd` on each new node. This then contacts the `slurmctdl` on the slurm control node, which informs it that the node is ready, and the job is started on the node.
 
 Once the scheduler has decided nodes are no longer required (again see autoscaling parameters) a similar process happens using `suspend.sh` on the slurm control node to run `reconfigure.py` in "suspend" mode with a list of nodes to remove.
 
-In a production environment it may be preferable to use a persistent service (e.g Rundeck) rather than ssh'ing back into the ansible/terraform control host to run scripts. However it is considered very strongly desirable that both deployment and autoscaling use the same repo to avoid problems encountered with approaches which define these configurations separately.
+In a production environment it may be preferable to use a persistent service (e.g Rundeck) rather than ssh'ing back into the ansible/terraform control host to run scripts - the approach used here was chosen as it does not require any additional tooling which allows the underlying aspects to be more easily understood. Whatever approach is used it is considered strongly desirable that both deployment and autoscaling use the same repo to avoid problems encountered with approaches which define the two configurations separately.
 
-The interaction of `scale.py` with ansible/terraform needs some discussion and will still be relevant even with a persistent service.
+The interaction of the `reconfigure.py` script with ansible/terraform needs some discussion which is likely to be still relevant even if the ssh/script-driven approach is replaced with a persistent service.
 
-Firstly, note that in contrast to the assumptions in the basic openhpc role, the cluster's compute nodes may no longer be contigous due to nodes being added/removed out of sequence by the scheduler. This, and flexibility in which nodes are instantiated, are handled in `eiffel-ohpc/terraform_ohpc/openhpc.tf` by defining the compute nodes using a local set variable (`nodeset`) which is populated at initial deploy from `min_nodes` and at later runs from a command-line variable `nodenames` giving a list of compute host hostnames which should exist in the cluster. Since this is all compute nodes, not just the additional nodes, `scale.py` construct this list by querying terraform for the currently-instantiated nodes and adding this to the additional nodes.
+Firstly, note that in contrast to the assumptions in the basic stackhpc-openhpc role, the cluster's compute nodes may no longer be contigous due to nodes being added/removed out of sequence by the scheduler. This, and flexibility in which nodes are instantiated, are handled in the the terraform configuration (`eiffel-ohpc/terraform_ohpc/openhpc.tf`) by defining the compute node names as a set (`nodeset`) which is generated for the initial deployment from `min_nodes` and directly set in later autoscale runs from a variable (`nodenames`) set on the command-line with specific hostnames. Note that this set must define *all* compute node names, not just the changes, as terraform requires the total cluster state to create the inventory for ansible. The `reconfigure.py` script constructs this total list by querying terraform for the list of currently-instantiated compute nodes and combining it with the additonal nodes it has been asked for.
 
-Secondly, some additonal complication is introduced because hostname/IP lookups are defined using `/etc/hosts` on each node, populated by ansible using inventory information generated by terraform. This means that on scale-up at least, the ansible has to be run on *all* nodes in the cluster to refresh this information. On scale-down stale info in `/etc/hosts` is assumed to be acceptable, as slurm will not try to communicate with 'suspended' nodes anyway.
+Secondly, some additonal complication is introduced because hostname/IP lookups are defined using `/etc/hosts` on each node, populated by ansible using inventory information generated by terraform. This means that on scale-up at least, the ansible has to be run on *all* nodes in the cluster to refresh this information. On scale-down leaving stale info in `/etc/hosts` is assumed to be acceptable, as slurm will not try to communicate with nodes it has 'suspended'.
 
-If autoscaling was the only required feature the above would be sufficent, and `scale.py` could simply:
+If autoscaling was the only required feature the above would be sufficent, and for autoscaling `reconfigure.py` could simply:
 - run terraform passing the list of all nodes required in the cluster
 - run ansible on all nodes
 
-However this assumes that the terraform describes the state of all nodes in the cluster. This assumption is broken by the reimage automation described below; in that case only part of the cluster may have been reimaged (e.g. due to running jobs on some nodes). If terraform is run on all nodes in that state, it will discover a discrepancy between the "desired", reimaged state and the current running state of some nodes, and would therefore delete and recreate them, killing any jobs on them. Therefore as well as passing the list of all nodes to terraform in the `nodenames` command-line option, multiple `-target` options are used on the terraform command to restrict it to only modifying the nodes specified by slurm (i.e. nodes to add on upscale or remove on downscale).
+However this assumes that the terraform describes the state of all nodes in the cluster. This assumption is broken by the reimage automation described below; in that case only part of the cluster may have been reimaged (e.g. due to running jobs on some nodes). If terraform is run on all nodes in that state, it will discover a discrepancy between the "desired" state in the config (i.e. with the new image) and the current state of all nodes, and would therefore delete and recreate all nodes. This would clearly terminate all slurm jobs. Therefore as well as passing the list of all nodes to terraform in the `nodenames` command-line option, multiple `-target` options are passed to the terraform command to restrict it to only modifying the nodes specified by slurm (i.e. nodes to add on upscale or remove on downscale).
+
+Lastly, note that the autoscaling does not run `scontrol reconfigure` or restart the slurm daemons; as the slurm configuration remains the same throughout there is no need to, so the scheduling loop will not be interrupted by autoscaling.
 
 Additional details of slurm's functionality, including configuration parameters which may needed in production, are given in:
 - https://slurm.schedmd.com/elastic_computing.html
@@ -278,11 +260,11 @@ The reimaging mechanism is that:
   - the set of compute host names is unchanged
   - the terraform is targeted at only a single instance, because this script is run by the compute node's slurmd, rather than the slurm control node's slurmctdl for autoscaling.
 
-As discussed above the requirement for reimaging drives requirement to limit terraform to specific nodes, as otherwise an autoscale after step 2. above would result in all compute nodes being deleted and recreated, killing jobs.
+As discussed above the requirement for reimaging drives requirement to limit terraform to specific nodes, as otherwise an autoscale occuring after step 2. above would result in all compute nodes being deleted and recreated, killing jobs.
 
-NB: This approach actually has broader functionality than only reimaging; any changes to the terraform will be applied to the drained/rebooted node(s) (e.g. image flavour) and any change to the ansible (e.g. software versions) would be applied to nodes.
+NB: This approach actually has broader functionality than only reimaging; any changes to the terraform configuration (e.g. image flavour) will be applied to the drained/rebooted node(s) and any change to the ansible (e.g. software versions) would be applied to all nodes.
 
-A potential enhancement would be for `reboot.sh` to examine slurm's "Reason" field and choose either an acutal reboot or a reimage/update depending on its value.
+A potential enhancement would be for `reboot.sh` select between either an actual reboot or a reimage/update, depending on the "Reason" field in the slurm state for this node.
 
 ## Manual size changes
 To manually change the size (number of persistent nodes) of the cluster:
@@ -290,11 +272,23 @@ To manually change the size (number of persistent nodes) of the cluster:
 1. Change `min_nodes` in `group_vars/all.yml`
 2. Run `ansible-playbook -i terraform_ohpc/ohpc_hosts resize.yml`
 
-If scaling down, the appropriate number of nodes will be drained starting from the highest-numbered nodes. By default, it waits up to 1 day for the drain to complete.
+If scaling down, the appropriate number of nodes will be drained starting from the highest-numbered nodes. The scale-down proceeds as soon as all nodes have been drained (by default waiting up to 1 day for this to complete).
 
 **NB: This currently only works for clusters with no cloud nodes and a single partition.**
 
-TODO: describe how this works.
+The manual size change mechanism is:
+- `resize.yml` compares the inventory against the current `min_nodes` value to construct a list of nodes to add or remove.
+- If deleting nodes:
+  - These are drained
+  - `reconfigure.py` is called in `delete` mode which:
+    - Runs terraform to remove the nodes and update the inventory
+    - Runs ansible on all nodes: this is required in order to update slurm.conf as well as /etc/hosts
+    
+    Note that the 2nd of these was not required for the `suspend` mode used for autoscale where the slurm.conf is not changed.
+
+- If adding nodes:
+  - `reconfigure.py` is called in `resume` mode - see description above.
+- In both cases the slurm daemons are then restarted. This rereads the configuration, but does not lose job state.
 
 ## Image creation options
 All nodes only require a "plain" centos image - ansible will install all necessary packages and set all necessary configuration on this. However as discussed above a snapshot image may be useful to signficantly speed up creation of new nodes.
@@ -313,5 +307,5 @@ The above assumes that a production cluster would have DNS hence the templating 
 - reimaging - `eiffel-vss-ctl`:/var/tmp/reimage.log
 
 # Known Issues
-- Messages in autoscaling/reimaging logs from the different hosts involved don't appear in running order.
-- TODO: rescaling problem
+- Messages in the autoscaling/reimaging logs from scripts on different hosts don't appear in running order.
+- On the 2nd and subsequent autoscaling the slurmctld loses contact with one of the autoscaled nodes during the job completion step. See bug #4 although note that the job does run, produce output and eventually complete.
