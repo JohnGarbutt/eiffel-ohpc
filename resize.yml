@@ -1,45 +1,39 @@
 # Resize the cluster. Note this assumes there are no cloud nodes!
-  
-- name: run openhpc role to drain nodes
-  gather_facts: false
-  hosts:
-  - cluster_login
-  - cluster_control
-  - cluster_batch
-  become: false
-  #vars:
-  #  openhpc_repo_url: "https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm"
-  pre_tasks:    
-    - name: identify nodes to drain by comparing inventory against `min_nodes`
-      # NB will always drain last nodes in partition
-      set_fact:
-        to_drain: "{{ groups['ohpc_compute'][(item.min_nodes - groups['ohpc_compute'] | length):] if item.min_nodes < groups['ohpc_compute'] | length else []}}"
-      loop: "{{ ohpc_partitions }}"
-      run_once: true # makes fact available on entire batch
-    - debug:
-        msg: "will drain nodes {{ ' '.join(to_drain) }}"
-      run_once: true # makes fact available on entire batch
-  
-  roles:
-    - name: run openhpc role to drain nodes
-      # this is a nop if adding nodes (i.e. nothing to drain)
-      role: stackhpc.openhpc
-      become: yes
-      openhpc_enable:
-        drain: "{{ inventory_hostname in to_drain }}"
-      #openhpc_slurm_control_host: "{{ groups['cluster_control'] | first }}"
-  
-  post_tasks:
 
-    # TODO: FIXME: also need to cope with ADDING nodes
-    - name: return nodes to cloud, rewrite inventory, slurm.conf and /etc/hosts
-      command: "slurmscripts/reconfigure.py delete {{ ' '.join(to_drain) }}"
-      # TODO: FIXME: templating for ansible gives NodeName=ohpc-compute-[0-0] with 1 node!
-      delegate_to: localhost
-      register: reconfigure
-      run_once: true
+#- import_playbook: drain.yml # TODO: make this optional somehow
+
+- name: add/remove nodes
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: identify nodes to delete by comparing inventory against `min_nodes`
+      # NB will always to_delete last nodes in partition
+      set_fact:
+        to_delete: "{{ groups['ohpc_compute'][(ohpc_partitions[0].min_nodes - groups['ohpc_compute'] | length):] if ohpc_partitions[0].min_nodes < groups['ohpc_compute'] | length else []}}"
+      # TODO: handle multiple partitions
+    - name: identify nodes to add by comparing inventory against `min_nodes`
+      set_fact:
+        to_add: "{{ range(ohpc_partitions[0].min_nodes) | map('regex_replace', '^(.*)$', 'ohpc-compute-\\1') | list | difference(groups['ohpc_compute']) }}"
+      # TODO: handle multiple partitions
+    - block:
+      - debug:
+          msg: "will delete node(s) {{ ' '.join(to_delete) }}"
+      # TODO: actually drain nodes!
+      - name: return drained nodes to cloud and update inventory, slurm.conf and /etc/hosts
+        command: "slurmscripts/reconfigure.py delete {{ ' '.join(to_drain) }}"
+      when: "to_delete != []"
+
+    - block:
+      - debug:
+          msg: "will add node(s) {{ ' '.join(to_add) }}"
+      - name: add instances
+        command: "slurmscripts/reconfigure.py resume {{ ' '.join(to_add) }}"
+      when: "to_add != []"
+
     - debug:
-        var: reconfigure
+        msg: "no nodes to be added/deleted"
+      when: "to_delete == [] and to_add == []"
+      # TODO: EXIT NOW!
 
 - name: restart slurm daemons
   gather_facts: false
@@ -61,5 +55,3 @@
         state: restarted
       loop: "{{ slurm_service.keys() }}"
       when: "item in group_names"
-
-    
