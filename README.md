@@ -224,19 +224,22 @@ sbatch -N 2 -n 2 runhello
 ```
 
 ## Autoscaling
-If more than 2 nodes are required the cluster will autoscale up - this will take some time (~2-3 minutes with a snapshot image, 8+ minutes with a ), with the job showing as "Configuring/CF" state until ready. It will then autoscale down almost immediately (see under "AUTOSCALING" in `slurm.conf` for relevant timing parameters).
+If `max_nodes` is more than `min_nodes` then if more nodes are required the cluster will autoscale up - this will take some
+time (~2-3 minutes with a snapshot image, ~8+ minutes with a plain centos immage), with the job showing as "Configuring/CF"
+state until ready. It will then autoscale down almost immediately (see under "AUTOSCALING" in `slurm.conf` for relevant
+timing parameters - values are currently set for testing and are not appropriate for production).
 
-The autoscaling machinery repurposes slurm's power management features to add/remove nodes as required. The 2 persistent compute nodes (i.e. below `min_nodes`) in the cluster are defined in `slurm.conf` and instantiated at cluster deployment as usual. Compute nodes between `min_nodes` and `max_nodes` are not instatiated when the cluster is deployed but are still defined the in `slurm.conf`, with "State=CLOUD". This is a slurm-defined state which tells slurm it contact these nodes initially. They will not appear in e.g. `sinfo` output until jobs have been scheduled on them. Note that slurm still assumes a 1:1 mapping between compute nodes and instances - all nodes must be defined in `slurm.conf`. This has some consequences which are discussed below.
+The autoscaling machinery repurposes slurm's power management features to add/remove nodes as required. The persistent
+compute nodes (i.e. below `min_nodes`) in the cluster are defined in `slurm.conf` and instantiated at cluster deployment as usual. Compute nodes between `min_nodes` and `max_nodes` are not instatiated when the cluster is deployed but are still defined the in `slurm.conf`, with "State=CLOUD". This is a slurm-defined state which tells slurm it cannot contact these nodes initially. They will not appear in e.g. `sinfo` output until jobs have been scheduled on them. Note that slurm still assumes a 1:1 mapping between compute nodes and instances, i.e. all nodes must be defined in `slurm.conf`. This has some consequences which are discussed below.
 
 The autoscaling mechanism is that:
 - The slurm scheduler decides more nodes are needed and calls `/etc/slurm/resume.sh` (created from the template `eiffel-ohpc/slurmscripts/resume.j2`, configured by `slurm.conf:ResumeProgram`) on the slurm control node, as user `slurm` (`slurm.conf:SlurmUser`), with a "hostlist expression" defining the additional nodes required e.g. "ohpc-compute-[3-4,8]".
-- This uses `scontrol` to expand the hostlist expression into individual hosts, then ssh's back into the ansible/terraform control host and runs `eiffel-ohpc/slurmscripts/scale.py` (created from the template `<same>.j2`) as the user who deployed the cluster, passing it the list of new nodes required.
+- This uses `scontrol` to expand the hostlist expression into individual hosts, then ssh's back into the ansible/terraform control host and runs `eiffel-ohpc/slurmscripts/reconfigure.py` (created from the template `<same>.j2`) as the user who deployed the cluster, passing it the mode "resume" and the list of new nodes required.
 - This essentially runs terraform to create instances and ansible to configure them, although there a few complications to this discussed below.
 - The last step of the ansible-driven configuration is to start the `slurmd` on each new node. This then contacts the `slurmctdl` on the slurm control node, which informs it that the node is ready, and the
   job is started on the node.
 
-Once the scheduler has decided nodes are no longer required (again see autoscaling parameters) a similar process happens using `suspend.sh` on the slurm control node to run `scale.py` with a list of nodes to
-remove.
+Once the scheduler has decided nodes are no longer required (again see autoscaling parameters) a similar process happens using `suspend.sh` on the slurm control node to run `reconfigure.py` in "suspend" mode with a list of nodes to remove.
 
 In a production environment it may be preferable to use a persistent service (e.g Rundeck) rather than ssh'ing back into the ansible/terraform control host to run scripts. However it is considered very strongly desirable that both deployment and autoscaling use the same repo to avoid problems encountered with approaches which define these configurations separately.
 
@@ -266,7 +269,20 @@ To change the image used by compute nodes:
 
 Nodes will be drained, then recreated with a new image.
 
-TODO: describe how this works.
+The reimaging mechanism is that:
+- The relevant node(s) is drained and then `/etc/slurm/reboot.sh` (created from the template `slurmscripts/reboot.j2`, configured by `slurm.conf:RebootProgram`) is called on that compute node.
+- This ssh's back into the ansible/terraform control host and runs `eiffel-ohpc/slurmscripts/reconfigure.py` (created from the template `<same>.j2`) as the user who deployed the cluster, passing it the mode "reboot" and its own hostname. This:
+  - Runs terraform targeted just at this node; terraform notices that the required image is not the same as the current image, so deletes and recreates the node with the new image.
+  - Runs ansible to configure all nodes; this installs and configures slurm on the recreated node and also updates `/etc/hosts` across the cluster - with DNS available the ansible could be limited to only the changed node.
+  Note these are actually the same actions as for the "resume" mode; the differences being that for reboot:
+  - the set of compute host names is unchanged
+  - the terraform is targeted at only a single instance, because this script is run by the compute node's slurmd, rather than the slurm control node's slurmctdl for autoscaling.
+
+As discussed above the requirement for reimaging drives requirement to limit terraform to specific nodes, as otherwise an autoscale after step 2. above would result in all compute nodes being deleted and recreated, killing jobs.
+
+NB: This approach actually has broader functionality than only reimaging; any changes to the terraform will be applied to the drained/rebooted node(s) (e.g. image flavour) and any change to the ansible (e.g. software versions) would be applied to nodes.
+
+A potential enhancement would be for `reboot.sh` to examine slurm's "Reason" field and choose either an acutal reboot or a reimage/update depending on its value.
 
 ## Manual size changes
 To manually change the size (number of persistent nodes) of the cluster:
@@ -280,16 +296,15 @@ If scaling down, the appropriate number of nodes will be drained starting from t
 
 TODO: describe how this works.
 
-## Image pipeline decisions
-All nodes only require a "plain" centos image - ansible will install all necessary packages and set all necessary configuration on this. However as discussed above a snapshot image may be useful to signficantly
-speed up creation of new nodes.
+## Image creation options
+All nodes only require a "plain" centos image - ansible will install all necessary packages and set all necessary configuration on this. However as discussed above a snapshot image may be useful to signficantly speed up creation of new nodes.
 
 In production, it may be considered desirable to prebuild images in a separate pipeline e.g. to allow off-line testing. This would allow (but not require) potentially nearly all of the ansible to be removed. It is suggested that at a minimum the ansible would need to:
 - template out /etc/slurm/slurm.conf (`stackhpc.openhpc` role)
 - copy ssh keys (scaling.yml, reimage.yml) - if the current ssh + scripts approach is used for rescaling/reimage
 - start slurm daemons (`stackhpc.openhpc` role)
 
-Note that it is assumed that a production cluster would have DNS hence the templating out of /etc/hosts (currently in the `stackhpc.openhpc` role) would not be required.
+The above assumes that a production cluster would have DNS hence the templating out of /etc/hosts would not be required.
 
 ## Log locations
 
