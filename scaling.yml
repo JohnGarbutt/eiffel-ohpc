@@ -71,7 +71,7 @@
   tasks:
     - name: Ensure Slurm services are running
       service:
-        name: "{{ openhpc_slurm_service }}"
+        name: "{{ openhpc_slurm_service }}" # set by stackhpc.openhpc role
         state: "started"
       when:
         - openhpc_slurm_service is defined

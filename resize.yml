@@ -51,10 +51,10 @@
       delegate_to: localhost
       when: "hostvars['localhost']['to_add'] != []"
     
-    - block:
-      - meta: refresh_inventory # will have changed on disk
-        run_once: true
-        
+    - meta: refresh_inventory # will have changed on disk
+      run_once: true
+
+    - block:  
       - name: restart slurm daemons
         service:
           name: "{{ item.value }}"
