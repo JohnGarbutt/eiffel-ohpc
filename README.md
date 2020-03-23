@@ -5,7 +5,11 @@ An [OpenHPC slurm](https://github.com/stackhpc/ansible-role-openhpc) cluster wit
 - manual resizing of cluster
 - automatic resizing of cluster driven by slurm ("autoscaling")
 
-The cluster has an NFS share at `/mnt/ohpc` exported from the slurm control/login node and as configured here, a minimum of 2 and a maximum of 4 compute nodes.
+The cluster has:
+- An NFS share at `/mnt/ohpc` exported from the slurm control/login node
+- A minimum of 2 and a maximum of 4 compute nodes - this can be changed via configuration
+- No users defined other than the default `centos` user
+- A single slurm partition
 
 Code in this branch and the instructions below are for [vss](https://vss.cloud.private.cam.ac.uk/) but other OpenStack clouds will be similar.
 
@@ -160,6 +164,8 @@ ssh centos@<ansible/tf control host IP>
 ssh -o ProxyCommand="ssh centos@<ohpc-login IP> -W %h:%p" <ohpc-compute-N IP>
 ```
 
+For IP addresses see the ansible inventory at `terraform_ohpc/ohpc_hosts`.
+
 ## Restarting slurm control daemon
 If slurm gets confused about node/job state e.g. during development/debugging, from the slurm control/login node run:
 
@@ -253,7 +259,7 @@ Nodes will be drained, then recreated with a new image.
 
 The reimaging mechanism is that:
 - The relevant node(s) is drained and then `/etc/slurm/reboot.sh` (created from the template `slurmscripts/reboot.j2`, configured by `slurm.conf:RebootProgram`) is called on that compute node.
-- This ssh's back into the ansible/terraform control host and runs `eiffel-ohpc/slurmscripts/reconfigure.py` (created from the template `<same>.j2`) as the user who deployed the cluster, passing it the mode "reboot" and its own hostname. This:
+- This ssh's back into the ansible/terraform control host and runs `eiffel-ohpc/slurmscripts/reconfigure.py` (created from the template `<same>.j2`) as the user who deployed the cluster, passing it the mode "update" and its own hostname. This:
   - Runs terraform targeted just at this node; terraform notices that the required image is not the same as the current image, so deletes and recreates the node with the new image.
   - Runs ansible to configure all nodes; this installs and configures slurm on the recreated node and also updates `/etc/hosts` across the cluster - with DNS available the ansible could be limited to only the changed node.
   Note these are actually the same actions as for the "resume" mode; the differences being that for reboot:
@@ -262,7 +268,7 @@ The reimaging mechanism is that:
 
 As discussed above the requirement for reimaging drives requirement to limit terraform to specific nodes, as otherwise an autoscale occuring after step 2. above would result in all compute nodes being deleted and recreated, killing jobs.
 
-NB: This approach actually has broader functionality than only reimaging; any changes to the terraform configuration (e.g. image flavour) will be applied to the drained/rebooted node(s) and any change to the ansible (e.g. software versions) would be applied to all nodes.
+NB: This approach actually has broader functionality than only reimaging; any changes to the terraform instance definition (e.g. instance type) will be applied to the drained/rebooted node(s) and any change to the ansible (e.g. software versions) would be applied to all nodes.
 
 A potential enhancement would be for `reboot.sh` select between either an actual reboot or a reimage/update, depending on the "Reason" field in the slurm state for this node.
 
