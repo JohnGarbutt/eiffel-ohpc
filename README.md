@@ -316,3 +316,30 @@ The above assumes that a production cluster would have DNS hence the templating 
 - Messages in the autoscaling/reimaging logs from scripts on different hosts don't appear in running order.
 - On the 2nd and subsequent autoscaling the slurmctld loses contact with one of the autoscaled nodes during the job completion step. See [issue #4](https://github.com/stackhpc/eiffel-ohpc/issues/4) although note that the job does run, produce output and eventually complete.
 - If the image isn't changed, then the "reboot" functionality doesn't actually perform a reboot which is confusing.
+- Currently only a single partition is supported by the manual scaling code.
+
+## Design
+
+The table below shows the actions required for each required functionality:
+
+- initial deployment
+- autoscaling: resume, suspend
+- manual size changes: enlarge, shrink
+- reimaging: update
+
+The table also shows where the action is initiated from and which steps (marked "tf") use terraform.
+
+| step                              | deploy | resume    | suspend   | enlarge | shrink | update |
+| --------------------------------- | ------ | --------- | --------- | ------- | ------ | ------ |
+|                    INITIATOR -->  | USER   | SLURMCTLD | SLURMCTLD | USER    | USER   | SLURMD |
+| drain instances                   |        |           |           |         | Y      |        |
+| wait for all drained              |        |           |           |         | Y      |        |
+| create instances  (tf)            | Y      | Y         |           | Y       |        |        |
+| delete instances  (tf)            |        |           | Y         |         | Y      |        |
+| refresh instances (tf)            |        |           |           |         |        | Y      |
+| refresh inventory (tf)            | Y      | Y         | Y         | Y       | Y      | Y      |
+| (re)write /etc/hosts (ALL)        | Y      | Y         | Y         | Y       | Y      | Y      |
+| install s/w, configure shares etc | Y      | Y         |           | Y       |        | Y      |
+| create/modify slurm.conf  (ALL)   | Y      |           |           | Y       | Y      |        |
+| start/restart slurm daemons       | ALL    | Y         |           | ALL     | ALL    | Y      |
+
