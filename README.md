@@ -332,14 +332,14 @@ The table also shows where the action is initiated from and which steps (marked 
 | step                              | deploy | resume    | suspend   | enlarge | shrink | update |
 | --------------------------------- | ------ | --------- | --------- | ------- | ------ | ------ |
 |                    INITIATOR -->  | USER   | SLURMCTLD | SLURMCTLD | USER    | USER   | SLURMD |
-| drain instances                   |        |           |           |         | Y      |        |
-| wait for all drained              |        |           |           |         | Y      |        |
-| create instances  (tf)            | Y      | Y         |           | Y       |        |        |
-| delete instances  (tf)            |        |           | Y         |         | Y      |        |
-| refresh instances (tf)            |        |           |           |         |        | Y      |
+| drain instances                   |        |           |           |         | Y      | Y      |
+| wait for all drained              |        |           |           |         | Y      | Y      |
+| delete instances  (tf)            |        |           | Y         |         | Y      | Y      |
+| create instances  (tf)            | Y      | Y         |           | Y       |        | Y      |
 | refresh inventory (tf)            | Y      | Y         | Y         | Y       | Y      | Y      |
-| (re)write /etc/hosts (ALL)        | Y      | Y         | Y         | Y       | Y      | Y      |
+| (re)write /etc/hosts              | ALL    | ALL       | ALL       | ALL     | ALL    | ALL    |
 | install s/w, configure shares etc | Y      | Y         |           | Y       |        | Y      |
-| create/modify slurm.conf  (ALL)   | Y      |           |           | Y       | Y      |        |
+| create slurm.conf                 | ALL    | Y         |           | Y       |        | Y      |
+| modify slurm.conf                 |        |           |           | ALL     | ALL    |        |
 | start/restart slurm daemons       | ALL    | Y         |           | ALL     | ALL    | Y      |
 
