@@ -43,10 +43,10 @@ On the ansible/tf control host `eiffel-vss-ctl`:
 - Install wget, git, unzip, pip (via epel) and virtualenv:
 
   ```shell
-  sudo yum install -y wget git unzip epel-release
-  sudo yum install -y python-pip
-  sudo pip install -U pip # update pip
-  sudo pip install virtualenv
+  sudo yum install -y wget git unzip
+  sudo yum install -y python3-pip libselinux-python3
+  sudo pip3 install -U pip # update pip
+  sudo pip3 install virtualenv
   ```
 
 - Generate some entropy (else eventually everything stalls):
@@ -86,7 +86,7 @@ On the ansible/tf control host `eiffel-vss-ctl`:
 
   ```shell
   cd
-  wget https://releases.hashicorp.com/terraform/0.12.18/terraform_0.12.18_linux_amd64.zip
+  wget https://releases.hashicorp.com/terraform/0.12.26/terraform_0.12.26_linux_amd64.zip
   unzip terraform*.zip
   sudo cp terraform /bin
   ```
