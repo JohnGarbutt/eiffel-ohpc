@@ -9,6 +9,8 @@
       file:
         path: /mnt/ohpc/centos
         owner: centos
+        state: directory
+      become: yes
     - name: clone test repo
       git:
         repo: 'https://github.com/stackhpc/hpc-tests'
