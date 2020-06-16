@@ -1,4 +1,4 @@
-- hosts: ohpc-login
+- hosts: "{{ groups['ohpc_login'][0] }}"
   tasks:
     - name: install git
       package:
