@@ -1,9 +1,9 @@
 variable "image" {
-  default = "CentOS-7-x86_64-GenericCloud-1907"
+  default = "CentOS7.8"
 }
 
 variable "flavor" {
-  default = "C1.vss.small"
+  default = "general.v1.tiny"
 }
 
 variable "ssh_key_file" {
@@ -15,9 +15,9 @@ variable "ssh_user_name" {
 }
 
 variable "floatingip_pool" {
-  default = "CUDN-Internet"
+  default = ""
 }
 
 variable "instance_prefix" {
-  default = "ohpc"
+  default = "jg-ohpc"
 }
