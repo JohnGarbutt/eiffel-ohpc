@@ -15,3 +15,9 @@ ohpc_login
 
 [cluster_batch:children]
 ohpc_compute
+
+[jg_login:children]
+ohpc_login
+
+[jg_compute:children]
+ohpc_compute

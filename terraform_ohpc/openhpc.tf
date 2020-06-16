@@ -23,7 +23,7 @@ variable "network" {
 
 locals {
   min_nodes = yamldecode(file("../group_vars/all.yml"))["ohpc_partitions"][0]["min_nodes"]
-  nodeset = var.nodenames != "" ? toset(split(" ", var.nodenames)) : toset([for s in range(local.min_nodes): "jg-ohpc-compute-${s}"])
+  nodeset = var.nodenames != "" ? toset(split(" ", var.nodenames)) : toset([for s in range(local.min_nodes): "jg-compute-${s}"])
   control_host_ip = yamldecode(file("../group_vars/all.yml"))["control_host_ip"]
   compute_image_name = yamldecode(file("../group_vars/all.yml"))["compute_image_name"]
 }
@@ -46,7 +46,7 @@ resource "openstack_compute_instance_v2" "compute" {
 }
 
 resource "openstack_compute_instance_v2" "login" {
-  name            = "jg-ohpc-login"
+  name            = "jg-login"
   image_name      = local.compute_image_name
   flavor_name     = "general.v1.tiny"
   key_pair        = var.keypair

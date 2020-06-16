@@ -1,7 +1,7 @@
 ohpc_partitions: # see ohpc role variable openhpc_slurm_partitions
 - name: "compute"
-  min_nodes: 1
-  max_nodes: 1
+  min_nodes: 2
+  max_nodes: 2
 control_host_ip: "10.60.253.110"
 compute_image_name: "CentOS7.8" # generic, snapshot="centos7-ohpc-v2"
 venv: "{{ playbook_dir }}/.venv/bin/activate" # path to venv containing ansible binaries etc
