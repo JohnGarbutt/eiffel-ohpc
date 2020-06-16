@@ -12,31 +12,31 @@ variable "nodenames" {
 
 variable "keypair" {
   type = string
-  default = "eiffel-vss-ctl"
+  default = "jg-ohpc-ctl"
   description = "Name of keypair on the ansible/terraform control host"
 }
 
 variable "network" {
   type = string
-  default = "net1"
+  default = "ilab"
 }
 
 locals {
   min_nodes = yamldecode(file("../group_vars/all.yml"))["ohpc_partitions"][0]["min_nodes"]
-  nodeset = var.nodenames != "" ? toset(split(" ", var.nodenames)) : toset([for s in range(local.min_nodes): "ohpc-compute-${s}"])
+  nodeset = var.nodenames != "" ? toset(split(" ", var.nodenames)) : toset([for s in range(local.min_nodes): "jg-ohpc-compute-${s}"])
   control_host_ip = yamldecode(file("../group_vars/all.yml"))["control_host_ip"]
   compute_image_name = yamldecode(file("../group_vars/all.yml"))["compute_image_name"]
 }
 
 provider "openstack" {
-  cloud = "vss"
+  cloud = "openstack"
 }
 
 resource "openstack_compute_instance_v2" "compute" {
   for_each        = local.nodeset
   name            = each.key
   image_name      = local.compute_image_name
-  flavor_name     = "C1.vss.small"
+  flavor_name     = "general.v1.tiny"
   key_pair        = var.keypair
   security_groups = ["default"]
   
@@ -46,9 +46,9 @@ resource "openstack_compute_instance_v2" "compute" {
 }
 
 resource "openstack_compute_instance_v2" "login" {
-  name            = "ohpc-login"
-  image_name      = "CentOS-7-x86_64-GenericCloud-1907"
-  flavor_name     = "C1.vss.small"
+  name            = "jg-ohpc-login"
+  image_name      = local.compute_image_name
+  flavor_name     = "general.v1.tiny"
   key_pair        = var.keypair
   security_groups = ["default"]
   
@@ -57,14 +57,14 @@ resource "openstack_compute_instance_v2" "login" {
   }
 }
 
-resource "openstack_networking_floatingip_v2" "fip_1" {
-  pool = "CUDN-Internet"
-}
-
-resource "openstack_compute_floatingip_associate_v2" "fip_1" {
-  floating_ip = openstack_networking_floatingip_v2.fip_1.address
-  instance_id = openstack_compute_instance_v2.login.id
-}
+#resource "openstack_networking_floatingip_v2" "fip_1" {
+#  pool = "CUDN-Internet"
+#}
+#
+#resource "openstack_compute_floatingip_associate_v2" "fip_1" {
+#  floating_ip = openstack_networking_floatingip_v2.fip_1.address
+#  instance_id = openstack_compute_instance_v2.login.id
+#}
 
 data  "template_file" "ohpc" {
     template = file("./template/ohpc.tpl")
@@ -76,8 +76,9 @@ EOT
 %{for compute in openstack_compute_instance_v2.compute}
 ${compute.name} ansible_host=${compute.network[0].fixed_ip_v4}%{ endfor }
 EOT
-      fip = "${openstack_networking_floatingip_v2.fip_1.address}"
-	  control_host = "${local.control_host_ip}"
+      #TODO:fip = "${openstack_networking_floatingip_v2.fip_1.address}"
+      fip = "${openstack_compute_instance_v2.login.network[0].fixed_ip_v4}"
+      control_host = "${local.control_host_ip}"
     }
     depends_on = [openstack_compute_instance_v2.compute]
 }
@@ -88,6 +89,7 @@ resource "local_file" "hosts" {
 }
 
 output "ophc_login_public_ip" {
-  value = openstack_networking_floatingip_v2.fip_1.address
+#  value = openstack_networking_floatingip_v2.fip_1.address
+  value = openstack_compute_instance_v2.login.network[0].fixed_ip_v4
   description = "Public IP for OpenHPC login node"
 }

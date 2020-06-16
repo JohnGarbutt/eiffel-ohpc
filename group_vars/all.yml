@@ -1,9 +1,9 @@
 ohpc_partitions: # see ohpc role variable openhpc_slurm_partitions
 - name: "compute"
-  min_nodes: 2
-  max_nodes: 4
-control_host_ip: "128.232.226.22"
-compute_image_name: "CentOS-7-x86_64-GenericCloud-1907" # generic, snapshot="centos7-ohpc-v2"
+  min_nodes: 1
+  max_nodes: 1
+control_host_ip: "10.60.253.110"
+compute_image_name: "CentOS7.8" # generic, snapshot="centos7-ohpc-v2"
 venv: "{{ playbook_dir }}/.venv/bin/activate" # path to venv containing ansible binaries etc
 tf_compute_resource: "openstack_compute_instance_v2" # terraform "resource type" of compute instances
 tf_lock_timeout: 240 # number of seconds to retry terraform operations if state file locked
