@@ -56,7 +56,7 @@
       lineinfile:
         path: /home/{{ ansible_user }}/.ssh/authorized_keys # fragile for user home directory location?
         state: present
-        line: "{{ hostvars['ohpc-login']['slurm_key'] }}" # TODO: not sure this is the right way to ref this host??
+        line: "{{ hostvars[groups['ohpc_login'][0]]['slurm_key'] }}" # TODO: not sure this is the right way to ref this host??
         #regexp: "{{ hostvars['ohpc-login']['slurm_key'] }}"
     - name: create reconfigure script on ansible/tf control host
       template:
